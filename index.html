@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta2/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+
+    <title>reactive</title>
+  </head>
+  <body class="container">
+    <button id="btn" class="btn btn-success">add</button>
+    <button id="btns" class="btn btn-success">remove</button>
+    <button id="update" class="btn btn-success">update</button>
+    <button id="get" class="btn btn-success">get</button>
+
+    <img
+      style="opacity: 0.4"
+      id="cat"
+      src="https://i.pinimg.com/originals/d6/68/c9/d668c985dc837b7c23237fd7817408a8.jpg"
+      width="300"
+      alt="cat"
+    />
+
+    <script type="module">
+      import { ReactiveDB } from "./client/browser.esm.js";
+
+      const reactive = new ReactiveDB("http://localhost:3000");
+
+      reactive.connectTo("users", () => {
+        console.log("connected");
+      });
+
+      reactive.on("value", (data, event) => {
+        console.log({ data, event });
+      });
+
+      document.querySelector("#btn").addEventListener("click", () => {
+        reactive.add({ name: "jose" });
+      });
+
+      document.querySelector("#btns").addEventListener("click", () => {
+        reactive.remove({ name: "jose" });
+      });
+
+      document.querySelector("#update").addEventListener("click", () => {
+        reactive.set({ name: "offline" }, { name: "online" });
+      });
+
+      document.querySelector("#get").addEventListener("click", async () => {
+        console.log(await reactive.get());
+      });
+
+      reactive
+        .onClose(() => (document.body.textContent = "offline :("))
+        .set({ name: "online" }, { name: "offline" });
+    </script>
+  </body>
+</html>
