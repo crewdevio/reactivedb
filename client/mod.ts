@@ -7,7 +7,6 @@
 
 import { Auth as Authentication } from "./auth/mod.ts";
 import type { ReactiveEvents } from "../src/types.ts";
-import { filterData } from "../src/shared/utils.ts";
 import v4 from "../src/libs/uuid/v4.js";
 import { parseURL } from "./util.ts";
 
@@ -45,7 +44,7 @@ const fromArray = (data: any[]) => {
   return data.length === 1 ? data[0] : data;
 };
 
-export class ReactiveDB {
+class ReactiveDB {
   #__queqe__: Array<{ event: string; callback: (data: any) => void }>;
   /**
    * actions to registe in handshake
@@ -169,16 +168,6 @@ export class ReactiveDB {
    * @param callback - handler function
    */
   public connectTo(collection: string, callback = (_event: Event) => {}): this {
-    const filter = filterData(collection);
-
-    this.#__filter__ = filter;
-
-    if (!filter) {
-      throw new Error("no valid path").message
-    }
-
-    console.log({ filter: this.#__filter__ });
-
     if (this.#__instance__) {
       this.#__to__ = collection;
       this.#Connected(async (event) => {
@@ -449,12 +438,12 @@ export class ReactiveDB {
   }
 }
 
-export default ReactiveDB;
-
 /**
- * create a multiples instances
+ * create multiples instances
  * @param connection
  */
-export function createInstance(connection: string) {
+export function createClient(connection: string) {
   return () => new ReactiveDB(connection);
 }
+
+export type Reactive = ReactiveDB;

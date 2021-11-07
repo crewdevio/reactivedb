@@ -1,6 +1,7 @@
-import { createInstance } from "./client/mod.ts";
+import { createClient } from "./client/mod.ts";
 
-const ReactiveDB = createInstance("http://localhost:3000");
+const ReactiveDB = createClient("http://localhost:4000");
+
 const client = ReactiveDB();
 const notifications = ReactiveDB();
 

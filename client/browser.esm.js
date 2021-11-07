@@ -6,8 +6,9 @@ class Auth1 {
   }
   async registeUserWithEmailAndPassword(email, password) {
     const response = await fetch(
-      `${this.#url}/[auth]/registeUserWithEmailAndPassword?token=${this.token
-        ?.token}&uuid=${this.token?.uuid}`,
+      `${this.#url}/[auth]/registeUserWithEmailAndPassword?token=${
+        this.token?.token
+      }&uuid=${this.token?.uuid}`,
       {
         method: "POST",
         headers: {
@@ -17,7 +18,7 @@ class Auth1 {
           email,
           password,
         }),
-      },
+      }
     );
     const data = await response.json();
     if (data?.error) {
@@ -37,7 +38,7 @@ class Auth1 {
           email,
           password,
         }),
-      },
+      }
     );
     const data = await response.json();
     if (data?.error) {
@@ -66,7 +67,7 @@ function bytesToUuid(bytes) {
 }
 const UUID_RE = new RegExp(
   "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
-  "i",
+  "i"
 );
 function validate(id) {
   return UUID_RE.test(id);
@@ -117,7 +118,7 @@ const excludes = {
 const fromArray = (data) => {
   return data.length === 1 ? data[0] : data;
 };
-class ReactiveDB1 {
+class ReactiveDB {
   #__queqe__;
   #__actions__;
   #__events__;
@@ -127,9 +128,10 @@ class ReactiveDB1 {
   #__to__;
   #__url__;
   #__instance__ = true;
+  #__filter__ = null;
   Auth;
-  constructor(connection1) {
-    const url = parseURL(connection1);
+  constructor(connection) {
+    const url = parseURL(connection);
     this.Auth = new Auth1(url.toHttp());
     this.#__url__ = url.toWs();
     this.#__ws__ = this.#Websocket();
@@ -157,7 +159,7 @@ class ReactiveDB1 {
     const url = new URL(this.#__url__);
     url.searchParams.set("x-authorization-token", this.Auth.token?.token);
     url.searchParams.set("x-authorization-uuid", this.Auth.token?.uuid);
-    return new WebSocket(url.toString());
+    return new WebSocket(this.#__url__);
   }
   #Send({ to, data }) {
     this.#__ws__.send(
@@ -166,7 +168,7 @@ class ReactiveDB1 {
           to,
           message: data,
         },
-      }),
+      })
     );
   }
   #Connected(callback = (event) => {}) {
@@ -179,14 +181,14 @@ class ReactiveDB1 {
         this.#__ws__.send(
           JSON.stringify({
             connect_to: [this.#__to__, excludes.collection],
-          }),
+          })
         );
         callback(event);
       });
       this.#__instance__ = false;
     } else {
       ClientWarning(
-        "you can't connect to multiple collection using only one instance.",
+        "you can't connect to multiple collection using only one instance."
       );
     }
     return this;
@@ -208,12 +210,12 @@ class ReactiveDB1 {
         if (validStream(stream.data)) {
           const { message } = JSON.parse(stream.data);
           const { data, uuid = "", event } = JSON.parse(message);
-          const isLoadEvent = uuid === this.#__uuid__ &&
-            event === this.#__events__.load;
+          const isLoadEvent =
+            uuid === this.#__uuid__ && event === this.#__events__.load;
           if (event === excludes.collection) {
             if (!data[0].includes(this.#__to__)) {
               throw ClientError(
-                `"${this.#__to__}" collection not exists in the database.`,
+                `"${this.#__to__}" collection not exists in the database.`
               );
             }
           }
@@ -346,5 +348,7 @@ class ReactiveDB1 {
     return mutations;
   }
 }
-export { ReactiveDB1 as ReactiveDB };
-export { ReactiveDB1 as default };
+function createClient1(connection) {
+  return () => new ReactiveDB(connection);
+}
+export { createClient1 as createClient };
