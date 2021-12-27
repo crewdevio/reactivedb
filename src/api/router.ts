@@ -20,7 +20,7 @@ import { jwt } from "../../imports/jwt.ts";
 
 export async function CreateRouter(
   connection: string | DataBaseProps,
-  secret: string,
+  secret: string
 ) {
   const router = new Router();
 
@@ -29,16 +29,12 @@ export async function CreateRouter(
 
   const schema: Array<{ method: string; route: string; handler: string }> = [];
 
-  let onceLog = true;
-
   if (await exists("./functions")) {
-    for await (
-      const file of walk("./functions", {
-        exts: ["ts", "js", "tsx", "jsx"],
-      })
-    ) {
+    for await (const file of walk("./functions", {
+      exts: ["ts", "js", "tsx", "jsx"],
+    })) {
       if (file.isFile && !file.name.startsWith("_")) {
-        const { route, methods, handler, path, name } = await handleFiles(file);
+        const { route, methods, handler } = await handleFiles(file);
 
         for (const method of methods) {
           schema.push({
@@ -47,28 +43,13 @@ export async function CreateRouter(
             handler: handler.toString(),
           });
 
-          if (onceLog) {
-            Logs.info(
-              `\n ${cyan("API Function:")} ${red(name)} loader from ${
-                green(
-                  path,
-                )
-              }\n - Http method supported: ${
-                yellow(
-                  method,
-                )
-              }\n - Endpoint: ${yellow(route)}\n`,
-            );
-            onceLog = true;
-          }
-
           // @ts-ignore
           router[method](
             route,
             // @ts-ignore
             async (ctx) =>
               // @ts-ignore
-              await handler(ctx, { Database, Events: reactiveEvents }),
+              await handler(ctx, { Database, Events: reactiveEvents })
           );
         }
       }
@@ -172,7 +153,7 @@ export async function CreateRouter(
       const query = Database.collection(collection);
       const finded = await query.findOne(
         { _id: new Bson.ObjectId(id) },
-        { noCursorTimeout: false },
+        { noCursorTimeout: false }
       );
 
       if (finded) {
@@ -212,7 +193,7 @@ export async function CreateRouter(
     const query = Database.collection(collection);
     const finded = await query.findOne(
       { _id: new Bson.ObjectId(id) },
-      { noCursorTimeout: false },
+      { noCursorTimeout: false }
     );
 
     if (finded) {
@@ -251,7 +232,7 @@ export async function CreateRouter(
     const query = Database.collection(collection);
     const finded = await query.findOne(
       { _id: new Bson.ObjectId(id) },
-      { noCursorTimeout: false },
+      { noCursorTimeout: false }
     );
 
     if (finded) {
@@ -313,7 +294,7 @@ export async function CreateRouter(
       });
 
       response.body = { token: true };
-    },
+    }
   );
 
   router.post(
@@ -351,7 +332,7 @@ export async function CreateRouter(
               email: findedEmail,
               uuid,
             },
-            secret,
+            secret
           );
 
           response.status = 200;
@@ -368,7 +349,7 @@ export async function CreateRouter(
       } catch (error) {
         console.log({ error });
       }
-    },
+    }
   );
 
   router.post("/[auth]/deleteEmailAccount", async ({ request, response }) => {
