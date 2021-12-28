@@ -12,6 +12,10 @@ client.on("value", (data, event) => {
   console.log({ data, event });
 })
 
+client.onClose().remove();
+client.onClose().set();
+
+
 // client.on("value", (data, event) => {
 //   console.log({ data, event });
 // });
@@ -27,3 +31,5 @@ client.on("value", (data, event) => {
 // notifications.on("value", (data, event) => {
 //   console.log({ data, event });
 // });
+
+

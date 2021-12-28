@@ -1,8 +1,27 @@
+import { parse } from "https://deno.land/std@0.119.0/flags/mod.ts";
 import { ReactiveCore } from "./mod.ts";
 
+const { args } = Deno;
+const DEFAULT_PORT = 4000;
+const argPort = parse(args).port as number | null;
+
+const username = Deno.env.get("USERNAME");
+const password = Deno.env.get("PASSWORD");
+const secret = Deno.env.get("SECRET") ?? "";
+
 await ReactiveCore({
-  connection: "mongodb://localhost:27017/reactivedb_test",
-  port: 4000,
-  secret:
-    "64d09d9930c8ecf79e513167a588cb75439b762ce8f9b22ea59765f32aa74ca19d2f1e97dc922a3d4954594a05062917fb24d1f8e72f2ed02a58ed7534f94d27",
+  connection: {
+    db: "ReactiveDBAdmin",
+    tls: true,
+    credential: {
+      username,
+      password,
+      db: "ReactiveDBAdmin",
+      mechanism: "SCRAM-SHA-1",
+    },
+    port: 27017,
+    host: "reactivedbadmin-shard-00-01.n3mf7.mongodb.net",
+  },
+  port: argPort ? Number(argPort) : DEFAULT_PORT,
+  secret,
 });

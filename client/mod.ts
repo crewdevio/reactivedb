@@ -309,13 +309,13 @@ class ReactiveDB {
    * remove data on database
    * @param {any} data
    */
-  public remove(data = {}) {
-    if (this.#__ws__.readyState === 1 && Object.keys(data).length) {
+  public remove(id = "") {
+    if (this.#__ws__.readyState === 1 && id !== "") {
       this.#Send({
         to: this.#__to__!,
         data: {
           event: this.#__events__.remove,
-          ...data,
+          data: { id },
         },
       });
     }
@@ -328,14 +328,18 @@ class ReactiveDB {
    * @param {any} old
    * @param {any} data
    */
-  public set(old = {}, data = {}) {
-    if (this.#__ws__.readyState === 1 && Object.keys(data).length) {
+  public set(id = "", data = {}) {
+    if (
+      this.#__ws__.readyState === 1 &&
+      Object.keys(data).length &&
+      id !== ""
+    ) {
       this.#Send({
         to: this.#__to__!,
         data: {
           event: this.#__events__.set,
           data: {
-            old,
+            id,
             new: data,
           },
         },
@@ -404,12 +408,12 @@ class ReactiveDB {
        * @param {any} data
        * @returns {this}
        */
-      set: (old = {}, data = {}) => {
-        if (Object.keys(old).length && Object.keys(data).length) {
+      set: (id = "", data = {}) => {
+        if (id !== "" && Object.keys(data).length) {
           this.#__actions__.push({
             action: this.#__events__.set,
             on: this.#__to__!,
-            data: { old, new: data },
+            data: { id, new: data },
           });
         }
 
@@ -421,12 +425,12 @@ class ReactiveDB {
        * @param {any} data
        * @returns {this}
        */
-      remove: (data = {}) => {
-        if (Object.keys(data).length) {
+      remove: (id = "") => {
+        if (id !== "") {
           this.#__actions__.push({
             action: this.#__events__.remove,
             on: this.#__to__!,
-            data,
+            data: { id },
           });
         }
 

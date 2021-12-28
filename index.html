@@ -26,37 +26,38 @@
     />
 
     <script type="module">
-      import { ReactiveDB } from "./client/browser.esm.js";
+      import { createClient } from "./client/browser.esm.js";
 
-      const reactive = new ReactiveDB("http://localhost:3000");
+      const reactive = createClient("http://localhost:4000");
+      const users = reactive();
 
-      reactive.connectTo("users", () => {
-        console.log("connected");
+      users.connectTo("users", () => {
+        console.log("connected to users");
       });
 
-      reactive.on("value", (data, event) => {
-        console.log({ data, event });
+      users.on("value", (data, event) => {
+        console.log(data, event);
+      });
+
+      users.onClose(() => {
+        console.log("closed");
       });
 
       document.querySelector("#btn").addEventListener("click", () => {
-        reactive.add({ name: "jose" });
-      });
-
-      document.querySelector("#btns").addEventListener("click", () => {
-        reactive.remove({ name: "jose" });
+        users.add({ number: Math.random() });
       });
 
       document.querySelector("#update").addEventListener("click", () => {
-        reactive.set({ name: "offline" }, { name: "online" });
+        users.set("61cb4b61ef9a8a1346d4d81f", {
+          number: `Erick ${Math.random()}`,
+        });
       });
 
-      document.querySelector("#get").addEventListener("click", async () => {
-        console.log(await reactive.get());
+      document.querySelector("#btns").addEventListener("click", () => {
+        users.remove("60e299f929ceab0afa04cc5a");
       });
 
-      reactive
-        .onClose(() => (document.body.textContent = "offline :("))
-        .set({ name: "online" }, { name: "offline" });
+      console.log(users);
     </script>
   </body>
 </html>

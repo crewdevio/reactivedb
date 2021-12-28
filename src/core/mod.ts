@@ -9,6 +9,7 @@ import type { Actions, IPacket, ReactiveCoreProps } from "../types.ts";
 import { Logs, MutableEvents, transform } from "../shared/utils.ts";
 import { cyan, yellow } from "../../imports/fmt.ts";
 import { StartDataBase } from "../database/mod.ts";
+import { Bson } from "../../imports/mongo.ts";
 import { server } from "../websocket/mod.ts";
 import { reactiveEvents } from "./events.ts";
 
@@ -40,9 +41,9 @@ export async function ReactiveCore({
     secret,
   });
 
-  port = (cyan(port.toString())) as any as number;
+  port = cyan(port.toString()) as any as number;
 
-  const message = `ReactiveDB started in http://localhost:${(port)}`;
+  const message = `ReactiveDB started in http://localhost:${port}`;
 
   console.log(
     yellow(`
@@ -50,7 +51,7 @@ export async function ReactiveCore({
   │                                                    │
   │    ${message}     │
   │                                                    │
-  ╰────────────────────────────────────────────────────╯\n`),
+  ╰────────────────────────────────────────────────────╯\n`)
   );
 
   // store offline actions for clients
@@ -68,7 +69,7 @@ export async function ReactiveCore({
       JSON.stringify({
         data: [collections],
         event: "[/collections/*]",
-      }),
+      })
     );
   });
 
@@ -79,7 +80,7 @@ export async function ReactiveCore({
       JSON.stringify({
         data: data ?? {},
         event,
-      }),
+      })
     );
   });
 
@@ -103,7 +104,7 @@ export async function ReactiveCore({
               data: [],
               uuid: uuid ?? "",
               event,
-            }),
+            })
           );
         } else {
           server.to(
@@ -112,7 +113,7 @@ export async function ReactiveCore({
               data: [...transform(finds)],
               uuid: uuid ?? "",
               event,
-            }),
+            })
           );
         }
 
@@ -133,7 +134,7 @@ export async function ReactiveCore({
           JSON.stringify({
             event,
             data: [...transform(finds)],
-          }),
+          })
         );
       }
 
@@ -146,7 +147,7 @@ export async function ReactiveCore({
               data: [],
               uuid: uuid ?? "",
               event,
-            }),
+            })
           );
         } else {
           server.to(
@@ -155,14 +156,16 @@ export async function ReactiveCore({
               data: [...transform(finds)],
               uuid: uuid ?? "",
               event,
-            }),
+            })
           );
         }
       }
 
       // remove item event
       if (event === MutableEvents.Remove) {
-        await data.deleteOne(userData);
+        const { id } = userData?.data;
+
+        await data.deleteOne({ _id: new Bson.ObjectId(id) });
         const finds = await data
           .find(undefined, { noCursorTimeout: false })
           .toArray();
@@ -172,15 +175,19 @@ export async function ReactiveCore({
           JSON.stringify({
             event,
             data: [...transform(finds)],
-          }),
+          })
         );
       }
 
       // update item event
       if (event === MutableEvents.Change) {
-        const { old, new: New } = userData.data;
+        const { id, new: New } = userData.data;
 
-        await data.updateOne(old, { $set: { ...New } });
+        await data.updateOne(
+          { _id: new Bson.ObjectId(id) },
+          { $set: { ...New } }
+        );
+
         const finds = await data
           .find(undefined, { noCursorTimeout: false })
           .toArray();
@@ -190,7 +197,7 @@ export async function ReactiveCore({
           JSON.stringify({
             event,
             data: [...transform(finds)],
-          }),
+          })
         );
       }
     });
@@ -202,7 +209,7 @@ export async function ReactiveCore({
     const { from } = packet as IPacket;
 
     const index = Array.from(actions).findIndex(
-      ({ id }) => id === Number(from.id),
+      ({ id }) => id === Number(from.id)
     );
 
     if (index !== -1) {
@@ -224,12 +231,14 @@ export async function ReactiveCore({
                 JSON.stringify({
                   event: action,
                   data: [...transform(finds)],
-                }),
+                })
               );
             }
 
             if (action === MutableEvents.Remove) {
-              await db.deleteOne(data);
+              const { id } = data;
+
+              await db.deleteOne({ _id: new Bson.ObjectId(id) });
               const finds = await db
                 .find(undefined, { noCursorTimeout: false })
                 .toArray();
@@ -239,12 +248,17 @@ export async function ReactiveCore({
                 JSON.stringify({
                   event: action,
                   data: [...transform(finds)],
-                }),
+                })
               );
             }
 
             if (action === MutableEvents.Change) {
-              await db.updateOne(data.old, { $set: { ...data.new } });
+              const { new: New, id } = data;
+
+              await db.updateOne(
+                { _id: new Bson.ObjectId(id) },
+                { $set: { ...New } }
+              );
               const finds = await db
                 .find(undefined, { noCursorTimeout: false })
                 .toArray();
@@ -254,7 +268,7 @@ export async function ReactiveCore({
                 JSON.stringify({
                   event: action,
                   data: [...transform(finds)],
-                }),
+                })
               );
             }
           });
