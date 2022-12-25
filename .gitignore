@@ -3,3 +3,4 @@
 ./example.ts
 ./test.ts
 ./index.html
+.env

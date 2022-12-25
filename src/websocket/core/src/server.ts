@@ -9,8 +9,10 @@ import {
   WebSocket,
 } from "../deps.ts";
 import { Client } from "./client.ts";
+import { StartDataBase } from "../../../database/mod.ts";
 import type { DataBaseProps } from "../../../types.ts";
 import { ITransmitterOptions } from "./interfaces.ts";
+import * as mongo from "../../../../imports/mongo.ts";
 import { EventEmitter } from "./event_emitter.ts";
 import { Transmitter } from "./transmitter.ts";
 import { Api } from "../../../api/mod.ts";
@@ -72,7 +74,9 @@ export class Server extends EventEmitter {
    */
   public transmitter: Transmitter;
 
-  private secret: string = "Default";
+  private secret = "Default";
+
+  public Database: mongo.Database | null = null;
 
   //////////////////////////////////////////////////////////////////////////////
   // FILE MARKER - CONSTRUCTOR /////////////////////////////////////////////////
@@ -111,7 +115,7 @@ export class Server extends EventEmitter {
         if (this.deno_server) {
           try {
             this.deno_server.close();
-          } catch (error) {
+          } catch (_error) {
             break;
           }
         }
@@ -128,10 +132,15 @@ export class Server extends EventEmitter {
    *
    * @returns A Promise of DenoServer.
    */
-  public run(options: RunOptions): DenoServer {
+  public async run(
+    options: RunOptions
+  ): Promise<{ server: DenoServer; DB: mongo.Database }> {
     this.database_connection = options.database;
 
+    const { Database } = (await StartDataBase(this.database_connection))!;
+
     this.secret = options.secret;
+    this.Database = Database;
 
     if (options.hostname) {
       this.hostname = options.hostname;
@@ -145,7 +154,10 @@ export class Server extends EventEmitter {
 
     this.acceptWebSockets();
 
-    return this.deno_server;
+    return {
+      server: this.deno_server,
+      DB: Database,
+    };
   }
 
   /**
@@ -157,10 +169,15 @@ export class Server extends EventEmitter {
    *
    * @returns A Promise of the DenoServer.
    */
-  public runTLS(options: RunOptionsTLS): DenoServer {
+  public async runTLS(
+    options: RunOptionsTLS
+  ): Promise<{ server: DenoServer; DB: mongo.Database }> {
     this.database_connection = options.database;
 
+    const { Database } = (await StartDataBase(this.database_connection))!;
+
     this.secret = options.secret;
+    this.Database = Database;
 
     if (options.hostname) {
       this.hostname = options.hostname;
@@ -174,7 +191,10 @@ export class Server extends EventEmitter {
 
     this.acceptWebSockets();
 
-    return this.deno_server;
+    return {
+      server: this.deno_server,
+      DB: Database,
+    };
   }
 
   /**
@@ -199,7 +219,7 @@ export class Server extends EventEmitter {
             const client = super.createClient(clientId, socket);
             try {
               await this.transmitter.handlePacket(
-                new Packet(client, `connect`),
+                new Packet(client, `connect`)
               );
               for await (const message of socket) {
                 // Handle binary
@@ -213,17 +233,17 @@ export class Server extends EventEmitter {
                   // Handle disconnects
                 } else if (isWebSocketCloseEvent(message)) {
                   await this.transmitter.handlePacket(
-                    new Packet(client, `disconnect`),
+                    new Packet(client, `disconnect`)
                   );
                   super.removeClient(client.id);
                 }
               }
-            } catch (e) {
+            } catch (_e) {
               if (!socket.isClosed) {
                 await socket.close(1000).catch(console.error);
                 super.removeClient(client.id);
                 await this.transmitter.handlePacket(
-                  new Packet(client, `disconnect`),
+                  new Packet(client, `disconnect`)
                 );
               }
             }
@@ -234,7 +254,7 @@ export class Server extends EventEmitter {
           });
       } // handle api requests
       else {
-        const app = await Api(this.database_connection, this.secret);
+        const app = await Api(this.Database!, this.secret);
         const response = await app.handle(req);
 
         if (response) {
@@ -268,7 +288,7 @@ export class Server extends EventEmitter {
    */
   protected async handleMessageAsString(
     client: Client,
-    message: string,
+    message: string
   ): Promise<void> {
     switch (message) {
       case "id":
@@ -282,7 +302,7 @@ export class Server extends EventEmitter {
 
       case "test":
         return client.socket.send(
-          `Server started on ${this.hostname}:${this.port}.`,
+          `Server started on ${this.hostname}:${this.port}.`
         );
 
       // If the message isn't any of the above, then it we expect the message
@@ -301,7 +321,7 @@ export class Server extends EventEmitter {
    */
   protected async handleMessageAsJsonString(
     client: Client,
-    message: string,
+    message: string
   ): Promise<void> {
     try {
       const json = JSON.parse(message);
@@ -319,7 +339,7 @@ export class Server extends EventEmitter {
         const packet = new Packet(
           client,
           json.send_packet.to,
-          json.send_packet.message,
+          json.send_packet.message
         );
         return await this.transmitter.handlePacket(packet);
       }
