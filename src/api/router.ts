@@ -14,18 +14,13 @@ import { AuthToken } from "../middlewares/auth.ts";
 import { exists, walk } from "../../imports/fs.ts";
 import { reactiveEvents } from "../core/events.ts";
 import type { DataBaseProps } from "../types.ts";
+import * as mongo from "../../imports/mongo.ts";
 import { Router } from "../../imports/oak.ts";
 import { generate } from "../libs/uuid/v4.js";
 import { jwt } from "../../imports/jwt.ts";
 
-export async function CreateRouter(
-  connection: string | DataBaseProps,
-  secret: string
-) {
+export async function CreateRouter(DB: mongo.Database, secret: string) {
   const router = new Router();
-
-  const { Database } = (await StartDataBase(connection))!;
-  Logs.info("Database started for Functions\n");
 
   const schema: Array<{ method: string; route: string; handler: string }> = [];
 
@@ -49,20 +44,20 @@ export async function CreateRouter(
             // @ts-ignore
             async (ctx) =>
               // @ts-ignore
-              await handler(ctx, { Database, Events: reactiveEvents })
+              await handler(ctx, { Database: DB, Events: reactiveEvents })
           );
         }
       }
     }
 
-    router.get("/[rt]/api_schema", ({ response }) => {
+    router.get("/[v1]/api_schema", ({ response }) => {
       response.body = schema;
     });
   }
 
   const routes = {
-    id: "/[rt]/:collection/:id",
-    collection: "/[rt]/:collection",
+    id: "/[v1]/:collection/:id",
+    collection: "/[v1]/:collection",
   };
 
   // * reactive db core api
@@ -71,7 +66,7 @@ export async function CreateRouter(
       const id = params?.id!;
       const collection = params?.collection!;
 
-      const data = Database.collection(collection);
+      const data = DB.collection(collection);
       const find = await data
         .find({ _id: new Bson.ObjectId(id) }, { noCursorTimeout: false })
         .toArray();
@@ -89,14 +84,14 @@ export async function CreateRouter(
 
   router.get(routes.collection, async ({ request, response, params }) => {
     try {
-      if (decodeURIComponent(request.url.pathname) === "/[rt]/*") {
-        const collections = await Database.listCollectionNames();
+      if (decodeURIComponent(request.url.pathname) === "/[v1]/*") {
+        const collections = await DB.listCollectionNames();
 
         response.status = 200;
         response.body = { collections };
       } else {
         const collection = params?.collection!;
-        const data = Database.collection(collection);
+        const data = DB.collection(collection);
 
         const find = await data
           .find(undefined, { noCursorTimeout: false })
@@ -120,9 +115,9 @@ export async function CreateRouter(
       const body = request.body({ type: "json" });
 
       const requestData = await body.value;
-      const query = Database.collection(collection);
+      const query = DB.collection(collection);
 
-      await query.insertOne(requestData);
+      const added = await query.insertOne(requestData);
 
       const finds = await query
         .find(undefined, { noCursorTimeout: false })
@@ -150,7 +145,7 @@ export async function CreateRouter(
       const collection = params?.collection!;
       const id = params?.id!;
 
-      const query = Database.collection(collection);
+      const query = DB.collection(collection);
       const finded = await query.findOne(
         { _id: new Bson.ObjectId(id) },
         { noCursorTimeout: false }
@@ -172,7 +167,7 @@ export async function CreateRouter(
         response.body = { ok: true };
       } else {
         response.status = 404;
-        response.body = { ok: false, message: `can't fount "${id}" resource` };
+        response.body = { ok: false, message: `can't found "${id}" resource` };
       }
     } catch (error) {
       response.status = 500;
@@ -190,7 +185,7 @@ export async function CreateRouter(
     const body = request.body({ type: "json" });
     const { _id, ...newData } = await body.value;
 
-    const query = Database.collection(collection);
+    const query = DB.collection(collection);
     const finded = await query.findOne(
       { _id: new Bson.ObjectId(id) },
       { noCursorTimeout: false }
@@ -215,7 +210,7 @@ export async function CreateRouter(
       response.body = { ok: true };
     } else {
       response.status = 404;
-      response.body = { ok: false, message: `can't fount "${id}" resource` };
+      response.body = { ok: false, message: `can't found "${id}" resource` };
     }
 
     response.status = 200;
@@ -229,7 +224,7 @@ export async function CreateRouter(
     const body = request.body({ type: "json" });
     const { _id, ...newData } = await body.value;
 
-    const query = Database.collection(collection);
+    const query = DB.collection(collection);
     const finded = await query.findOne(
       { _id: new Bson.ObjectId(id) },
       { noCursorTimeout: false }
@@ -254,7 +249,7 @@ export async function CreateRouter(
       response.body = { ok: true };
     } else {
       response.status = 404;
-      response.body = { ok: false, message: `can't fount "${id}" resource` };
+      response.body = { ok: false, message: `can't found "${id}" resource` };
     }
 
     response.status = 200;
@@ -267,7 +262,7 @@ export async function CreateRouter(
     "/[auth]/registeUserWithEmailAndPassword",
     // AuthToken,
     async ({ response, request }) => {
-      const users = Database.collection("Auth_users");
+      const users = DB.collection("Auth_users");
 
       const body = request.body({ type: "json" });
       const { email, password } = await body.value;
@@ -285,12 +280,22 @@ export async function CreateRouter(
         return;
       }
 
-      await users.insert({
+      await users.insertOne({
         email,
         password: encryptedPassword,
         uuid,
         created_at: new Date().toLocaleString(),
         provider: "email",
+      });
+
+      const finds = await users
+        .find(undefined, { noCursorTimeout: false })
+        .toArray();
+
+      reactiveEvents.post({
+        to: "Auth_users",
+        data: [...transform(finds)],
+        event: "child_changed",
       });
 
       response.body = { token: true };
@@ -301,7 +306,7 @@ export async function CreateRouter(
     "/[auth]/loginWithEmailAndPassword",
     async ({ response, request }) => {
       try {
-        const users = Database.collection("Auth_users");
+        const users = DB.collection("Auth_users");
 
         const body = request.body({ type: "json" });
         const { email, password } = await body.value;
@@ -353,7 +358,7 @@ export async function CreateRouter(
   );
 
   router.post("/[auth]/deleteEmailAccount", async ({ request, response }) => {
-    const users = Database.collection("Auth_users");
+    const users = DB.collection("Auth_users");
     const body = request.body({ type: "json" });
     const { uuid } = await body.value;
 
@@ -371,7 +376,7 @@ export async function CreateRouter(
   });
 
   router.post("/[auth]/disableEmailAccount", async ({ request, response }) => {
-    const users = Database.collection("Auth_users");
+    const users = DB.collection("Auth_users");
     const body = request.body({ type: "json" });
     const { uuid, active } = await body.value;
 

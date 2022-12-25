@@ -7,7 +7,6 @@
 
 import type { Database as DB } from "../imports/mongo.ts";
 import type { RouterContext } from "../imports/oak.ts";
-import type { Credential } from "./database/mod.ts";
 import { MongoClient } from "../imports/mongo.ts";
 import { Packet } from "./websocket/mod.ts";
 
@@ -59,7 +58,10 @@ export interface DataBaseProps {
   safe?: string;
   keyFile?: string;
   keyFilePassword?: string;
-  credential: Credential;
+  credential: {
+    username?: string;
+    password?: string;
+  }
 }
 
 export interface ApiCoreProps {

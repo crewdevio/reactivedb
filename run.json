@@ -1,7 +1,5 @@
 {
   "scripts": {
-    "start": "deno run -A --unstable --no-check ./main.ts",
-    "start:client": "deno run -A --unstable --no-check ./test.ts",
     "build:browser": "deno bundle --no-check ./client/mod.ts ./client/browser.esm.js",
     "build": "deno compile -A --unstable -o ./reactivedb ./main.ts",
     "build:windows": "deno compile -A --unstable --target x86_64-pc-windows-msvc -o ./reactivedb_windows ./main.ts",
