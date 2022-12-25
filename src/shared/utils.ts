@@ -8,7 +8,10 @@
 import { cyan, red, yellow } from "../../imports/fmt.ts";
 
 function getDate() {
-  return new Date().toLocaleTimeString();
+  return new Intl.DateTimeFormat("en-US", {
+    dateStyle: "medium",
+    timeStyle: "medium",
+  }).format(new Date());
 }
 
 export const Logs = {
