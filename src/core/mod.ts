@@ -34,10 +34,10 @@ export async function ReactiveCore({
   secret,
 }: ReactiveCoreProps) {
   // Run websockets server
-  await server.run({
+  const instance = await server.run({
+    database: connection,
     hostname: "0.0.0.0",
     port,
-    database: connection,
     secret,
   });
 
@@ -58,10 +58,9 @@ export async function ReactiveCore({
   let actions = new Set<Actions>([]);
   let client: Actions | any = {};
 
-  const instance = (await StartDataBase(connection))!;
-  Logs.info("Database started for Realtime core");
+  // const instance = (await StartDataBase(connection))!;
 
-  const collections = await instance.Database.listCollectionNames();
+  const collections = await instance.DB.listCollectionNames();
 
   server.on("[/collections/*]", () => {
     server.to(
@@ -89,7 +88,7 @@ export async function ReactiveCore({
     server.on(collection, async (_packet) => {
       const packet = _packet as IPacket;
 
-      const data = instance.Database.collection(collection);
+      const data = instance.DB.collection(collection);
       const finds = await data
         .find(undefined, { noCursorTimeout: false })
         .toArray();

@@ -17,6 +17,7 @@ import { EventEmitter } from "./event_emitter.ts";
 import { Transmitter } from "./transmitter.ts";
 import { Api } from "../../../api/mod.ts";
 import { Packet } from "./packet.ts";
+import { Logs } from "../../../shared/utils.ts";
 
 /**
  * remove auth from search params
@@ -254,11 +255,13 @@ export class Server extends EventEmitter {
           });
       } // handle api requests
       else {
+        console.time("response");
         const app = await Api(this.Database!, this.secret);
         const response = await app.handle(req);
 
         if (response) {
           req.respond(response);
+          console.timeEnd("response");
         }
       }
     }

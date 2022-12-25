@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { parseDataBaseUrl } from "../shared/utils.ts";
+import { Logs, parseDataBaseUrl } from "../shared/utils.ts";
 import { MongoClient } from "../../imports/mongo.ts";
 import type { DataBaseProps } from "../types.ts";
 
@@ -14,7 +14,7 @@ import type { DataBaseProps } from "../types.ts";
  * @param {string | DataBaseProps} connection connection config
  */
 export async function StartDataBase(
-  connection: string | DataBaseProps = "mongodb://127.0.0.1:27017/Default",
+  connection: string | DataBaseProps = "mongodb://127.0.0.1:27017/Default"
 ) {
   try {
     const client = new MongoClient();
@@ -28,14 +28,15 @@ export async function StartDataBase(
         client,
       };
     } else if (
-      typeof connection === "object" && Object.keys(connection).length
+      typeof connection === "object" &&
+      Object.keys(connection).length
     ) {
       const {
         db,
         tls,
         host,
         port,
-        credential: { mechanism = "SCRAM-SHA-1", password, username },
+        credential: { password, username },
       } = connection;
 
       await client.connect({
@@ -48,12 +49,14 @@ export async function StartDataBase(
           },
         ],
         credential: {
-          mechanism,
+          mechanism: "SCRAM-SHA-1",
           username,
           password,
           db,
         },
       });
+
+      Logs.info("Database started for Realtime core, Functions and GraphQL\n");
 
       return {
         Database: client.database(db),
