@@ -71,23 +71,26 @@ export class Transmitter {
       return this.handleReservedEvent(packet);
     }
 
+    console.log("here?");
+
     // Don't allow clients to send messages to channels they aren't in
     const channelsClientIsIn: string[] = Object.keys(
-      this.server.channels,
+      this.server.channels
     ).filter((channelName) => {
       return this.server.channels[channelName].listeners.has(
-        Number(packet.from.id),
+        packet.from.id
       );
     });
     if (channelsClientIsIn.indexOf(packet.to) < 0) {
       throw new Error(
-        `Client ${packet.from.id} is not connected to ${packet.to}`,
+        `Client ${packet.from.id} is not connected to ${packet.to}`
       );
     }
 
     // Invoke all callbacks (aka the handlers for this packet)
     if (this.server.channels[packet.to]) {
       for await (const cb of this.server.channels[packet.to].callbacks) {
+        console.log(packet);
         cb(packet);
       }
       return;
@@ -120,7 +123,7 @@ export class Transmitter {
         break;
 
       case "pong":
-        if (!this.server.clients[packet.from.id as number]) {
+        if (!this.server.clients[packet.from.id]) {
           if (packet.from instanceof Client) {
             if (packet.from.socket) {
               this.server.createClient(packet.from.id, packet.from.socket);
@@ -149,12 +152,11 @@ export class Transmitter {
    *
    * @param clientId - The WebSocket connection ID of the client in question.
    */
-  public hydrateClient(clientId: number): void {
+  public hydrateClient(clientId: string): void {
     if (this.reconnect) {
       this.server.clients[clientId].pong_received = true;
-      this.server.clients[clientId].heartbeat_id = this.startHeartbeat(
-        clientId,
-      );
+      this.server.clients[clientId].heartbeat_id =
+        this.startHeartbeat(clientId);
     }
   }
 
@@ -167,7 +169,7 @@ export class Transmitter {
    *
    * @param clientId - The WebSocket connection ID of the client in question.
    */
-  private ping(clientId: number): void {
+  private ping(clientId: string): void {
     if (this.server.clients[clientId]) {
       const client = this.server.clients[clientId];
       if (client.pong_received) {
@@ -187,7 +189,7 @@ export class Transmitter {
    * @returns The heartbeat ID. This is used to clear a heartbeat in
    * timeoutPing().
    */
-  private startHeartbeat(clientId: number): number {
+  private startHeartbeat(clientId: string): number {
     const id = setInterval(() => this.ping(clientId), this.ping_interval);
     return id;
   }
@@ -198,7 +200,7 @@ export class Transmitter {
    *
    * @param clientId - The WebSocket connection ID of the client in question.
    */
-  private timeoutPing(clientId: number): void {
+  private timeoutPing(clientId: string): void {
     if (this.server.clients[clientId]) {
       this.server.removeClient(clientId);
       const heartbeatId = this.server.clients[clientId].heartbeat_id;

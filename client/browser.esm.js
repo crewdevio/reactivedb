@@ -1,4 +1,8 @@
-class Auth1 {
+// deno-fmt-ignore-file
+// deno-lint-ignore-file
+// This code was bundled using `deno bundle` and it's not recommended to edit it manually
+
+class Auth {
     token = null;
     #url;
     constructor(connection){
@@ -45,7 +49,7 @@ function bytesToUuid(bytes) {
         ...bytes
     ].map((bit)=>{
         const s = bit.toString(16);
-        return bit < 16 ? "0" + s : s;
+        return bit < 0x10 ? "0" + s : s;
     });
     return [
         ...bits.slice(0, 4),
@@ -56,7 +60,7 @@ function bytesToUuid(bytes) {
         "-",
         ...bits.slice(8, 10),
         "-",
-        ...bits.slice(10, 16), 
+        ...bits.slice(10, 16)
     ].join("");
 }
 const UUID_RE = new RegExp("^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$", "i");
@@ -65,8 +69,8 @@ function validate(id) {
 }
 function generate() {
     const rnds = crypto.getRandomValues(new Uint8Array(16));
-    rnds[6] = rnds[6] & 15 | 64;
-    rnds[8] = rnds[8] & 63 | 128;
+    rnds[6] = rnds[6] & 0x0f | 0x40;
+    rnds[8] = rnds[8] & 0x3f | 0x80;
     return bytesToUuid(rnds);
 }
 const __default = {
@@ -86,7 +90,7 @@ function parseURL(url) {
     return {
         toWs () {
             const host = hostname === "localhost" ? "127.0.0.1" : hostname;
-            return `${isHTTPS ? "wss:" : "ws:"}//${host}${port}/reactivedb_ws_connection`;
+            return `${isHTTPS ? "wss:" : "ws:"}//${host}${port}/[WebSocket]`;
         },
         toHttp () {
             const host = hostname === "localhost" ? "127.0.0.1" : hostname;
@@ -94,8 +98,7 @@ function parseURL(url) {
         }
     };
 }
-const validStream = (stream)=>!stream.startsWith("Connected to") && stream.includes("{") || stream.includes("}")
-;
+const validStream = (stream)=>!stream.startsWith("Connected to") && stream.includes("{") || stream.includes("}");
 function ClientWarning(message) {
     console.warn(`[ReactiveDB Client]: ${message}`);
 }
@@ -122,10 +125,10 @@ class ReactiveDB {
     Auth;
     constructor(connection){
         const url = parseURL(connection);
-        this.Auth = new Auth1(url.toHttp());
+        this.Auth = new Auth(url.toHttp());
+        this.#__uuid__ = __default.generate();
         this.#__url__ = url.toWs();
         this.#__ws__ = this.#Websocket();
-        this.#__uuid__ = __default.generate();
         this.#__invalidate__ = false;
         this.#__actions__ = [];
         this.#__queqe__ = [];
@@ -138,21 +141,14 @@ class ReactiveDB {
             value: "value",
             get: "get"
         };
-        setTimeout(()=>{
-            this.#Send({
-                to: excludes.collection,
-                data: {
-                }
-            });
-        }, 1000);
     }
-     #Websocket() {
+    #Websocket() {
         const url = new URL(this.#__url__);
-        url.searchParams.set("x-authorization-token", this.Auth.token?.token);
-        url.searchParams.set("x-authorization-uuid", this.Auth.token?.uuid);
-        return new WebSocket(this.#__url__);
+        url.searchParams.set("client-uid", this.#__uuid__);
+        console.log(url.toString());
+        return new WebSocket(url.toString());
     }
-     #Send({ to , data  }) {
+    #Send({ to , data  }) {
         this.#__ws__.send(JSON.stringify({
             send_packet: {
                 to,
@@ -160,12 +156,10 @@ class ReactiveDB {
             }
         }));
     }
-     #Connected(callback = (event)=>{
-    }) {
+    #Connected(callback = (event)=>{}) {
         this.#__ws__.addEventListener("open", callback);
     }
-    connectTo(collection, callback1 = (_event)=>{
-    }) {
+    connectTo(collection, callback = (_event)=>{}) {
         if (this.#__instance__) {
             this.#__to__ = collection;
             this.#Connected(async (event)=>{
@@ -175,7 +169,8 @@ class ReactiveDB {
                         excludes.collection
                     ]
                 }));
-                callback1(event);
+                console.log("here");
+                callback(event);
             });
             this.#__instance__ = false;
         } else {
@@ -183,8 +178,7 @@ class ReactiveDB {
         }
         return this;
     }
-    on(evt, callback2 = (_data, _event)=>{
-    }) {
+    on(evt, callback = (_data, _event)=>{}) {
         if (!this.#__invalidate__) {
             this.#Connected(()=>{
                 const uuid = this.#__uuid__;
@@ -198,24 +192,25 @@ class ReactiveDB {
                 });
             });
             this.#__ws__.addEventListener("message", (stream)=>{
+                console.log(stream.data);
                 if (validStream(stream.data)) {
                     const { message  } = JSON.parse(stream.data);
-                    const { data: data1 , uuid ="" , event  } = JSON.parse(message);
+                    const { data , uuid ="" , event  } = JSON.parse(message);
                     const isLoadEvent = uuid === this.#__uuid__ && event === this.#__events__.load;
                     if (event === excludes.collection) {
-                        if (!data1[0].includes(this.#__to__)) {
+                        if (!data[0].includes(this.#__to__)) {
                             throw ClientError(`"${this.#__to__}" collection not exists in the database.`);
                         }
                     }
                     if (isLoadEvent) {
-                        callback2(fromArray(data1), event);
+                        callback(fromArray(data), event);
                     }
                     if (event !== this.#__events__.load && event !== this.#__events__.get && event !== excludes.collection && evt === this.#__events__.value) {
-                        callback2(fromArray(data1), event);
+                        callback(fromArray(data), event);
                     }
-                    this.#__queqe__.forEach(({ event: itemEvent , callback: callback3  })=>{
+                    this.#__queqe__.forEach(({ event: itemEvent , callback  })=>{
                         if (itemEvent === event) {
-                            callback3(fromArray(data1));
+                            callback(fromArray(data));
                         }
                     });
                 }
@@ -224,19 +219,18 @@ class ReactiveDB {
         } else {
             this.#__queqe__.push({
                 event: evt,
-                callback: callback2
+                callback
             });
         }
         return this;
     }
-    add(data2 = {
-    }) {
-        if (this.#__ws__.readyState === 1 && Object.keys(data2).length) {
+    add(data = {}) {
+        if (this.#__ws__.readyState === 1 && Object.keys(data).length) {
             this.#Send({
                 to: this.#__to__,
                 data: {
                     event: this.#__events__.add,
-                    ...data2
+                    ...data
                 }
             });
         }
@@ -256,16 +250,15 @@ class ReactiveDB {
         }
         return this;
     }
-    set(id = "", data3 = {
-    }) {
-        if (this.#__ws__.readyState === 1 && Object.keys(data3).length && id !== "") {
+    set(id = "", data = {}) {
+        if (this.#__ws__.readyState === 1 && Object.keys(data).length && id !== "") {
             this.#Send({
                 to: this.#__to__,
                 data: {
                     event: this.#__events__.set,
                     data: {
                         id,
-                        new: data3
+                        new: data
                     }
                 }
             });
@@ -284,10 +277,10 @@ class ReactiveDB {
             this.#__ws__.addEventListener("message", (stream)=>{
                 if (validStream(stream.data)) {
                     const { message  } = JSON.parse(stream.data);
-                    const { data: data4 , uuid ="" , event  } = JSON.parse(message);
+                    const { data , uuid ="" , event  } = JSON.parse(message);
                     if (event === "get" && uuid === this.#__uuid__) {
                         const response = {
-                            data: data4
+                            data
                         };
                         resolve(response);
                     }
@@ -295,30 +288,27 @@ class ReactiveDB {
             });
         });
     }
-    onClose(callback4 = (_event)=>{
-    }) {
-        this.#__ws__.addEventListener("close", callback4);
+    onClose(callback = (_event)=>{}) {
+        this.#__ws__.addEventListener("close", callback);
         const mutations = {
-            add: (data5 = {
-            })=>{
-                if (Object.keys(data5).length) {
+            add: (data = {})=>{
+                if (Object.keys(data).length) {
                     this.#__actions__.push({
                         action: this.#__events__.add,
                         on: this.#__to__,
-                        data: data5
+                        data
                     });
                 }
                 return mutations;
             },
-            set: (id = "", data6 = {
-            })=>{
-                if (id !== "" && Object.keys(data6).length) {
+            set: (id = "", data = {})=>{
+                if (id !== "" && Object.keys(data).length) {
                     this.#__actions__.push({
                         action: this.#__events__.set,
                         on: this.#__to__,
                         data: {
                             id,
-                            new: data6
+                            new: data
                         }
                     });
                 }
@@ -341,7 +331,6 @@ class ReactiveDB {
     }
 }
 function createClient(connection) {
-    return ()=>new ReactiveDB(connection)
-    ;
+    return ()=>new ReactiveDB(connection);
 }
 export { createClient as createClient };

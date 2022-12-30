@@ -91,9 +91,9 @@ class ReactiveDB {
     const url = parseURL(connection);
 
     this.Auth = new Authentication(url.toHttp());
+    this.#__uuid__ = v4.generate();
     this.#__url__ = url.toWs();
     this.#__ws__ = this.#Websocket();
-    this.#__uuid__ = v4.generate();
     this.#__invalidate__ = false;
     this.#__actions__ = [];
     this.#__queqe__ = [];
@@ -108,12 +108,12 @@ class ReactiveDB {
     };
 
     // wait a timeout
-    setTimeout(() => {
-      this.#Send({
-        to: excludes.collection,
-        data: {},
-      });
-    }, 1000);
+    // setTimeout(() => {
+    //   this.#Send({
+    //     to: excludes.collection,
+    //     data: {},
+    //   });
+    // }, 1000);
   }
 
   /**
@@ -123,10 +123,13 @@ class ReactiveDB {
     const url = new URL(this.#__url__);
 
     // send token and uuid for auth
-    url.searchParams.set("x-authorization-token", this.Auth.token?.token!);
-    url.searchParams.set("x-authorization-uuid", this.Auth.token?.uuid!);
+    // url.searchParams.set("x-authorization-token", this.Auth.token?.token!);
+    // url.searchParams.set("x-authorization-uuid", this.Auth.token?.uuid!);
 
-    return new WebSocket(this.#__url__);
+    url.searchParams.set("client-uid", this.#__uuid__);
+
+    console.log(url.toString());
+    return new WebSocket(url.toString());
   }
 
   /**

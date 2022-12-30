@@ -27,7 +27,7 @@ export function parseURL(url: string) {
 
       return `${
         isHTTPS ? "wss:" : "ws:"
-      }//${host}${port}/reactivedb_ws_connection`;
+      }//${host}${port}/[WebSocket]`;
     },
     toHttp() {
       const host = hostname === "localhost" ? "127.0.0.1" : hostname;

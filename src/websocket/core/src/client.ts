@@ -1,4 +1,4 @@
-import { WebSocket } from "../deps.ts";
+// import { WebSocket } from "../deps.ts";
 
 /**
  * The Client class represents a single end-user client.  It contains
@@ -16,7 +16,7 @@ export class Client {
    *
    *     const clientId = conn.rid;
    */
-  public id: number;
+  public id: string;
 
   /**
    * A list of channels the client is listening to.
@@ -31,7 +31,7 @@ export class Client {
   /**
    * The web socket connection for the client.
    */
-  public socket: WebSocket;
+  public socket: globalThis.WebSocket;
 
   //////////////////////////////////////////////////////////////////////////////
   // FILE MARKER - CONSTRUCTOR /////////////////////////////////////////////////
@@ -43,7 +43,7 @@ export class Client {
    * @param id - The client's ID.
    * @param socket - The socket this client belongs to.
    */
-  constructor(id: number, socket: WebSocket) {
+  constructor(id: string, socket: globalThis.WebSocket) {
     this.id = id;
     this.socket = socket;
   }

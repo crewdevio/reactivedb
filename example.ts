@@ -1,9 +1,13 @@
-import { filterData } from "./src/shared/utils.ts";
+import { createClient } from "./client/mod.ts";
 
-console.log(filterData("/users/0/name"));
-console.log(filterData("users/0/name"));
-console.log(filterData("users"));
-console.log(filterData(""));
-console.log(filterData("/"));
+const client = createClient("http://localhost:4000");
 
+const ws = client();
 
+ws.connectTo("Auth_users", () => {
+  console.log("connected");
+});
+
+ws.on("value", (data, event) => {
+  console.log({ data, event });
+});

@@ -1,6 +1,6 @@
 import { RESERVED_EVENT_NAMES } from "./reserved_event_names.ts";
 import { Channel } from "./channel.ts";
-import { WebSocket } from "../deps.ts";
+// import { WebSocket } from "../deps.ts";
 import { Sender } from "./sender.ts";
 import { Client } from "./client.ts";
 import { Packet } from "./packet.ts";
@@ -26,7 +26,7 @@ export class EventEmitter {
    * A list of key value pairs describing all clients connected, where the key
    * is the client id, and the value represents the client object.
    */
-  public clients: { [key: number]: Client } = {};
+  public clients: { [key: string]: Client } = {};
 
   /**
    * Instance of the Sender class
@@ -57,7 +57,7 @@ export class EventEmitter {
    * @returns A Client instance for use in the socket-client connection
    * lifecycle.
    */
-  public createClient(clientId: number, clientSocket: WebSocket): Client {
+  public createClient(clientId: string, clientSocket: globalThis.WebSocket): Client {
     const client = new Client(clientId, clientSocket);
     this.clients[clientId] = client;
     return client;
@@ -70,7 +70,7 @@ export class EventEmitter {
    * @param channelName - The name of the channel.
    * @param clientId - Client's socket connection id.
    */
-  public addClientToChannel(channelName: string, clientId: number): void {
+  public addClientToChannel(channelName: string, clientId: string): void {
     if (!this.channels[channelName]) {
       throw new Error(`Channel "${channelName}" does not exist.`);
     }
@@ -167,7 +167,7 @@ export class EventEmitter {
    *
    * @param clientId - The ID of the client's socket connection.
    */
-  public removeClient(clientId: number): void {
+  public removeClient(clientId: string): void {
     if (!this.clients[clientId]) return;
     if (this.clients[clientId].listening_to) {
       this.clients[clientId].listening_to.forEach((to: string) => {
@@ -186,7 +186,7 @@ export class EventEmitter {
    * @param channelName - The name of the channel.
    * @param clientId - Client's socket connection id.
    */
-  public removeClientFromChannel(channelName: string, clientId: number): void {
+  public removeClientFromChannel(channelName: string, clientId: string): void {
     if (!this.channels[channelName]) {
       throw new Error(`Channel "${channelName}" not found.`);
     }
@@ -213,7 +213,7 @@ export class EventEmitter {
   public to(
     channelName: string,
     message: unknown,
-    clientToSendTo?: number,
+    clientToSendTo?: string,
   ): void {
     this.queuePacket(new Packet(this, channelName, message), clientToSendTo);
   }
@@ -229,7 +229,7 @@ export class EventEmitter {
    * @param packet - See Packet.
    * @param clientToSendTo - If set, only send the packet to that client
    */
-  private queuePacket(packet: Packet, clientToSendTo?: number): void {
+  private queuePacket(packet: Packet, clientToSendTo?: string): void {
     if (!this.channels[packet.to]) {
       throw new Error(`Channel "${packet.to}" not found.`);
     }

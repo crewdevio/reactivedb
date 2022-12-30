@@ -6,7 +6,7 @@
  */
 
 import type { Actions, IPacket, ReactiveCoreProps } from "../types.ts";
-import { Logs, MutableEvents, transform } from "../shared/utils.ts";
+import { MutableEvents, transform } from "../shared/utils.ts";
 import { cyan, yellow } from "../../imports/fmt.ts";
 import { StartDataBase } from "../database/mod.ts";
 import { Bson } from "../../imports/mongo.ts";
@@ -34,7 +34,7 @@ export async function ReactiveCore({
   secret,
 }: ReactiveCoreProps) {
   // Run websockets server
-  const instance = await server.run({
+  const instance = await server.init({
     database: connection,
     hostname: "0.0.0.0",
     port,
@@ -277,4 +277,6 @@ export async function ReactiveCore({
       actions.delete(Array.from(actions)[index]);
     }
   });
+
+  await server.start();
 }

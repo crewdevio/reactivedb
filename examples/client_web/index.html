@@ -26,12 +26,12 @@
     />
 
     <script type="module">
-      import { createClient } from "./client/browser.esm.js";
+      import { createClient } from "http://127.0.0.1:5500/client/browser.esm.js";
 
       const reactive = createClient("http://localhost:4000");
       const users = reactive();
 
-      users.connectTo("users", () => {
+      users.connectTo("Auth_users", () => {
         console.log("connected to testing");
       });
 
@@ -54,7 +54,7 @@
       // });
 
       document.querySelector("#btns").addEventListener("click", () => {
-        users.remove("63a49be648a9f5313f09a546");
+        users.remove("63a4fe13933a11140234337d");
       });
 
     </script>
