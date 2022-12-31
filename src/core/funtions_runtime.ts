@@ -5,11 +5,12 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import { importModule } from "../../imports/dynamic_import.ts";
+import { Logs, IS_DENO_DEPLOY } from "../shared/utils.ts";
 import { join, toFileUrl } from "../../imports/path.ts";
 import type { WalkEntry } from "../../imports/fs.ts";
 import type { HandlerFunction } from "../types.ts";
 import * as colors from "../../imports/fmt.ts";
-import { Logs } from "../shared/utils.ts";
 
 export async function handleFiles(file: WalkEntry) {
   const groupRegx = /\[((?:.|\r?\n)+?)\]/gim;
@@ -43,13 +44,11 @@ export async function handleFiles(file: WalkEntry) {
     if (!methods.includes(method)) {
       Logs.error(
         colors.red(
-          `\n this method ${
-            colors.yellow(
-              `"${method}"`,
-            )
-          } is not allowed, in file: ${colors.cyan(`${file.path}`)}\n`,
+          `\n this method ${colors.yellow(
+            `"${method}"`
+          )} is not allowed, in file: ${colors.cyan(`${file.path}`)}\n`
         ),
-        true,
+        true
       );
     }
 
@@ -62,13 +61,11 @@ export async function handleFiles(file: WalkEntry) {
     if (!extentions.includes(ext)) {
       Logs.error(
         colors.red(
-          `this extention file is not supported ${
-            colors.yellow(
-              `"${ext}"`,
-            )
-          } is not supported, in file: ${colors.cyan(`${file.path}`)}\n`,
+          `this eimportModulextention file is not supported ${colors.yellow(
+            `"${ext}"`
+          )} is not supported, in file: ${colors.cyan(`${file.path}`)}\n`
         ),
-        true,
+        true
       );
     }
 
@@ -91,29 +88,31 @@ export async function handleFiles(file: WalkEntry) {
     route = route.substring(0, route.length - 1);
   }
 
-  let handlerFunction = (
-    await import(toFileUrl(join(Deno.cwd(), file.path)).href)
-  )?.default as HandlerFunction | undefined;
+  let handlerFunction;
+
+  if (IS_DENO_DEPLOY) {
+    handlerFunction = (
+      await importModule(toFileUrl(join(Deno.cwd(), file.path)).href)
+    )?.default as HandlerFunction | undefined;
+  } else {
+    handlerFunction = (
+      await import(toFileUrl(join(Deno.cwd(), file.path)).href)
+    )?.default as HandlerFunction | undefined;
+  }
 
   if (!handlerFunction || typeof handlerFunction !== "function") {
     Logs.error(
-      `\n in ${
-        colors.green(
-          file.path,
-        )
-      }\n file should export a function by default: ${`${
-        colors.magenta(
-          "export default",
-        )
-      } ${colors.green("function")}${colors.red("(")}ctx, utils${
-        colors.red(
-          ")",
-        )
-      } ${colors.red("{")} ... ${colors.red("}")}\n`}`,
-      true,
+      `\n in ${colors.green(
+        file.path
+      )}\n file should export a function by default: ${`${colors.magenta(
+        "export default"
+      )} ${colors.green("function")}${colors.red("(")}ctx, utils${colors.red(
+        ")"
+      )} ${colors.red("{")} ... ${colors.red("}")}\n`}`,
+      true
     );
 
-    handlerFunction = (ctx) => {};
+    handlerFunction = (ctx: any) => {};
   }
 
   return {
