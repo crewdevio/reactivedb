@@ -27,13 +27,14 @@ export async function Api(DB: mongo.Database, secret: string, app: Application) 
 
     ctx.response.headers.set(
       "x-powered-by",
-      "ReactiveDB"
+      "ReactiveDB x Deno"
     );
 
-    ctx.response.headers.set(
-      "x-deno-version",
-      Deno.version.deno
-    );
+    // !Buttercubz: don't works on deno deploy :(
+    // ctx.response.headers.set(
+    //   "x-deno-version",
+    //   Deno.version.deno
+    // );
 
     await next();
   });
