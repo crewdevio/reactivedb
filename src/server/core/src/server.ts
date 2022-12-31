@@ -8,7 +8,6 @@ import type { DataBaseProps } from "../../../types.ts";
 import { ITransmitterOptions } from "./interfaces.ts";
 import * as mongo from "../../../../imports/mongo.ts";
 import { EventEmitter } from "./event_emitter.ts";
-import { Logs } from "../../../shared/utils.ts";
 import { Transmitter } from "./transmitter.ts";
 import { Api } from "../../../api/mod.ts";
 import { Client } from "./client.ts";
@@ -53,16 +52,6 @@ export class Server extends EventEmitter {
    *     this.deno_server = serve();
    */
   public oak_server: Application;
-
-  /**
-   * A property to hold the hostname this server listens on.
-   */
-  public hostname = "localhost";
-
-  /**
-   * A property to hold the port this server listens on.
-   */
-  public port = 1557;
 
   /**
    * A property to hold the transmitter. The transmitter is in charge of
@@ -125,14 +114,8 @@ export class Server extends EventEmitter {
     this.Database = Database;
     this.options = options;
 
-    if (options.hostname) {
-      this.hostname = options.hostname;
-    }
 
-    if (options.port) {
-      this.port = options.port;
-    }
-
+    await Api(this.Database, this.secret, this.oak_server);
     await this.acceptWebSockets();
 
     return {
@@ -172,8 +155,6 @@ export class Server extends EventEmitter {
           ws.addEventListener("message", async (event) => {
             const message = event.data;
 
-            console.log(message);
-
             // Handle binary
             if (message instanceof Uint8Array) {
               this.handleMessageAsBinary(client, message);
@@ -182,10 +163,6 @@ export class Server extends EventEmitter {
             } else if (typeof message === "string") {
               await this.handleMessageAsString(client, message);
             }
-          });
-
-          ws.addEventListener("error", (event) => {
-            console.log("error?", event);
           });
 
           ws.addEventListener("close", async () => {
@@ -198,73 +175,7 @@ export class Server extends EventEmitter {
           ctx.throw(502);
         }
       }
-
-      ctx.response.body = "pepe";
     });
-
-    // for await (const req of this.deno_server!) {
-    //   const requestURL = sanitizeURL(req.url);
-
-    //   // websocket path url
-    //   if (requestURL.base === "/reactivedb_ws_connection") {
-    //     const { conn, headers, r: bufReader, w: bufWriter } = req;
-
-    //     acceptWebSocket({
-    //       bufReader,
-    //       bufWriter,
-    //       conn,
-    //       headers,
-    //     })
-    //       .then(async (socket: WebSocket): Promise<void> => {
-    //         const clientId = conn.rid;
-    //         const client = super.createClient(clientId, socket);
-    //         try {
-    //           await this.transmitter.handlePacket(
-    //             new Packet(client, `connect`)
-    //           );
-    //           for await (const message of socket) {
-    //             // Handle binary
-    //             if (message instanceof Uint8Array) {
-    //               this.handleMessageAsBinary(client, message);
-
-    //               // Handle strings
-    //             } else if (typeof message === "string") {
-    //               await this.handleMessageAsString(client, message);
-
-    //               // Handle disconnects
-    //             } else if (isWebSocketCloseEvent(message)) {
-    //               await this.transmitter.handlePacket(
-    //                 new Packet(client, `disconnect`)
-    //               );
-    //               super.removeClient(client.id);
-    //             }
-    //           }
-    //         } catch (_e) {
-    //           if (!socket.isClosed) {
-    //             await socket.close(1000).catch(console.error);
-    //             super.removeClient(client.id);
-    //             await this.transmitter.handlePacket(
-    //               new Packet(client, `disconnect`)
-    //             );
-    //           }
-    //         }
-    //       })
-    //       .catch(async (err: Error): Promise<void> => {
-    //         console.error(`failed to accept websocket: ${err}`);
-    //         await req.respond({ status: 400 });
-    //       });
-    //   } // handle api requests
-    //   else {
-    //     console.time("response");
-    //     const app = await Api(this.Database!, this.secret);
-    //     const response = await app.handle(req);
-
-    //     if (response) {
-    //       req.respond(response);
-    //       console.timeEnd("response");
-    //     }
-    //   }
-    // }
   }
 
   //////////////////////////////////////////////////////////////////////////////
@@ -305,7 +216,7 @@ export class Server extends EventEmitter {
 
       case "test":
         return client.socket.send(
-          `Server started on ${this.hostname}:${this.port}.`
+          `Server started on ${this.options?.hostname}:${this.options?.port}.`
         );
 
       // If the message isn't any of the above, then it we expect the message

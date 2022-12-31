@@ -5,10 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import type { RouterContext } from "../imports/server_oak.ts";
 import type { Database as DB } from "../imports/mongo.ts";
-import type { RouterContext } from "../imports/oak.ts";
 import { MongoClient } from "../imports/mongo.ts";
-import { Packet } from "./websocket/mod.ts";
+import { Packet } from "./server/mod.ts";
 
 export type ReactiveEvents =
   | "child_removed"
@@ -40,7 +40,7 @@ export interface IPacket extends Packet {
 }
 
 export interface Actions {
-  id: number;
+  id: string;
   actions: Array<{
     action: ReactiveEvents;
     data: any;
@@ -61,7 +61,7 @@ export interface DataBaseProps {
   credential: {
     username?: string;
     password?: string;
-  }
+  };
 }
 
 export interface ApiCoreProps {
@@ -70,6 +70,7 @@ export interface ApiCoreProps {
   connection: string | DataBaseProps;
 }
 
+//@ts-ignore
 export interface Context extends RouterContext {}
 
 export type HandlerFunction = (context: Context) => void | Promise<void>;

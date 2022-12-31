@@ -1,10 +1,10 @@
-import type { RouterContext } from "../../imports/oak.ts";
+import type { Context } from "../../imports/server_oak.ts";
 import { validate } from "../libs/uuid/v4.js";
 import { jwt } from "../../imports/jwt.ts";
 
 export async function AuthToken(
-  { request, response }: RouterContext,
-  next: () => Promise<any> | any,
+  { request, response }: Context,
+  next: () => Promise<any> | any
 ) {
   if (request.url.search === "") {
     response.status = 401;
@@ -16,7 +16,8 @@ export async function AuthToken(
 
     return;
   } else {
-    const params = request.url.searchParams.has("token") &&
+    const params =
+      request.url.searchParams.has("token") &&
       request.url.searchParams.has("uuid");
 
     if (params) {

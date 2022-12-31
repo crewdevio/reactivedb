@@ -71,15 +71,11 @@ export class Transmitter {
       return this.handleReservedEvent(packet);
     }
 
-    console.log("here?");
-
     // Don't allow clients to send messages to channels they aren't in
     const channelsClientIsIn: string[] = Object.keys(
       this.server.channels
     ).filter((channelName) => {
-      return this.server.channels[channelName].listeners.has(
-        packet.from.id
-      );
+      return this.server.channels[channelName].listeners.has(packet.from.id);
     });
     if (channelsClientIsIn.indexOf(packet.to) < 0) {
       throw new Error(
@@ -90,7 +86,6 @@ export class Transmitter {
     // Invoke all callbacks (aka the handlers for this packet)
     if (this.server.channels[packet.to]) {
       for await (const cb of this.server.channels[packet.to].callbacks) {
-        console.log(packet);
         cb(packet);
       }
       return;

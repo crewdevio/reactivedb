@@ -5,9 +5,9 @@ import {
   extname,
   basename,
 } from "../../imports/path.ts";
+import { Router, Application } from "../../imports/server_oak.ts";
 import { applyGraphQL, gql, GQLError } from "../graphql/mod.ts";
 import { walk } from "../../imports/fs.ts";
-import { Router, Application } from "../../imports/oak.ts";
 
 export async function handleGraphql(dir: string, app: Application) {
   let typeDefs = null;

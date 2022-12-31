@@ -113,7 +113,7 @@ export async function handleFiles(file: WalkEntry) {
       true,
     );
 
-    handlerFunction = () => {};
+    handlerFunction = (ctx) => {};
   }
 
   return {

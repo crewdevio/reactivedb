@@ -8,10 +8,9 @@
 import type { Actions, IPacket, ReactiveCoreProps } from "../types.ts";
 import { MutableEvents, transform } from "../shared/utils.ts";
 import { cyan, yellow } from "../../imports/fmt.ts";
-import { StartDataBase } from "../database/mod.ts";
 import { Bson } from "../../imports/mongo.ts";
-import { server } from "../websocket/mod.ts";
 import { reactiveEvents } from "./events.ts";
+import { server } from "../server/mod.ts";
 
 /**
  * start reactive server service.
@@ -55,22 +54,10 @@ export async function ReactiveCore({
   );
 
   // store offline actions for clients
-  let actions = new Set<Actions>([]);
+  let actions = new Map<string, Actions>();
   let client: Actions | any = {};
 
-  // const instance = (await StartDataBase(connection))!;
-
   const collections = await instance.DB.listCollectionNames();
-
-  server.on("[/collections/*]", () => {
-    server.to(
-      "[/collections/*]",
-      JSON.stringify({
-        data: [collections],
-        event: "[/collections/*]",
-      })
-    );
-  });
 
   // dispatch custom or internal events
   reactiveEvents.attach(({ to, data, event }) => {
@@ -117,7 +104,7 @@ export async function ReactiveCore({
         }
 
         // register offline client actions
-        actions.add({ ...client, actions: packet.message.actions });
+        actions.set(uuid!, { ...client, actions: packet.message.actions });
         client = {};
       }
 
@@ -202,22 +189,16 @@ export async function ReactiveCore({
     });
   }
 
-  server.on("connect", ({ from }) => (client.id = Number(from.id)));
+  server.on("connect", ({ from }) => (client.id = from.id));
 
   server.on("disconnect", (packet) => {
     const { from } = packet as IPacket;
 
-    const index = Array.from(actions).findIndex(
-      ({ id }) => id === Number(from.id)
-    );
-
-    if (index !== -1) {
-      // execute offline clients actions
-      Array.from(actions).forEach(({ actions, id }) => {
-        if (Number(from.id) === id) {
-          actions.forEach(async ({ action, data, on }) => {
-            const instance = (await StartDataBase(connection))!;
-            const db = instance.Database.collection(on);
+    if (actions.has(from.id)) {
+      actions.forEach((value, key) => {
+        if (from.id === key) {
+          value.actions.forEach(async ({ action, data, on }) => {
+            const db = instance.DB.collection(on);
 
             if (action === MutableEvents.Add) {
               await db.insertOne(data);
@@ -274,7 +255,7 @@ export async function ReactiveCore({
         }
       });
 
-      actions.delete(Array.from(actions)[index]);
+      actions.delete(from.id);
     }
   });
 

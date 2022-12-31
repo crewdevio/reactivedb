@@ -1,6 +1,5 @@
 import { RESERVED_EVENT_NAMES } from "./reserved_event_names.ts";
 import { Channel } from "./channel.ts";
-// import { WebSocket } from "../deps.ts";
 import { Sender } from "./sender.ts";
 import { Client } from "./client.ts";
 import { Packet } from "./packet.ts";

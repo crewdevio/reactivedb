@@ -31,7 +31,7 @@
       const reactive = createClient("http://localhost:4000");
       const users = reactive();
 
-      users.connectTo("Auth_users", () => {
+      users.connectTo("users", () => {
         console.log("connected to testing");
       });
 
@@ -41,10 +41,10 @@
 
       users.onClose(() => {
         console.log("closed");
-      });
+      }).add({ from: "disconned", ok: true })
 
       document.querySelector("#btn").addEventListener("click", () => {
-        users.add({ name: "Math.random()", id: "Math.random()" });
+        users.add({ name: "erick", id: "sosa" });
       });
 
       // document.querySelector("#update").addEventListener("click", () => {
@@ -54,7 +54,7 @@
       // });
 
       document.querySelector("#btns").addEventListener("click", () => {
-        users.remove("63a4fe13933a11140234337d");
+        users.remove("63b05d560a00316db1839844");
       });
 
     </script>

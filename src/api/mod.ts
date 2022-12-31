@@ -6,13 +6,11 @@
  */
 
 import { handleGraphql } from "../core/graphql_runtime.ts";
-import { Application } from "../../imports/oak.ts";
+import { Application } from "../../imports/server_oak.ts";
 import * as mongo from "../../imports/mongo.ts";
-import { exists } from "../../imports/fs.ts";
 import { CreateRouter } from "./router.ts";
 
-export async function Api(DB: mongo.Database, secret: string) {
-  const app = new Application();
+export async function Api(DB: mongo.Database, secret: string, app: Application) {
   const Router = await CreateRouter(DB, secret);
 
   app.use(async (ctx, next) => {
@@ -27,6 +25,16 @@ export async function Api(DB: mongo.Database, secret: string) {
       "Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With"
     );
 
+    ctx.response.headers.set(
+      "x-powered-by",
+      "ReactiveDB"
+    );
+
+    ctx.response.headers.set(
+      "x-deno-version",
+      Deno.version.deno
+    );
+
     await next();
   });
 
@@ -34,9 +42,9 @@ export async function Api(DB: mongo.Database, secret: string) {
   app.use(Router.routes());
 
   // inject and start graphql
-  if (await exists("./graphql")) {
-    await handleGraphql("./graphql", app);
-  }
+  // if (await exists("./graphql")) {
+  //   await handleGraphql("./graphql", app);
+  // }
 
   return app;
 }

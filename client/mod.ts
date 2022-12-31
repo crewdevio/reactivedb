@@ -7,7 +7,7 @@
 
 import { Auth as Authentication } from "./auth/mod.ts";
 import type { ReactiveEvents } from "../src/types.ts";
-import v4 from "../src/libs/uuid/v4.js";
+import { Routes } from "../src/shared/utils.ts";
 import { parseURL } from "./util.ts";
 
 const validStream = (stream: string) =>
@@ -26,8 +26,10 @@ function ClientWarning(message: string) {
  * launch Client Error
  * @param {string} message
  */
-function ClientError(message: string) {
-  return new Error(`[ReactiveDB Client]: ${message}`).message;
+function ClientError(message: string, err?: unknown) {
+  return new Error(`[ReactiveDB Client]: ${message}`, {
+    cause: err,
+  }).message;
 }
 
 /**
@@ -82,6 +84,8 @@ class ReactiveDB {
    */
   #__filter__: any = null;
 
+  #__parse__url: ReturnType<typeof parseURL>;
+
   /**
    * authentication
    */
@@ -91,7 +95,8 @@ class ReactiveDB {
     const url = parseURL(connection);
 
     this.Auth = new Authentication(url.toHttp());
-    this.#__uuid__ = v4.generate();
+    this.#__uuid__ = window.crypto.randomUUID();
+    this.#__parse__url = url;
     this.#__url__ = url.toWs();
     this.#__ws__ = this.#Websocket();
     this.#__invalidate__ = false;
@@ -128,7 +133,6 @@ class ReactiveDB {
 
     url.searchParams.set("client-uid", this.#__uuid__);
 
-    console.log(url.toString());
     return new WebSocket(url.toString());
   }
 
@@ -242,7 +246,7 @@ class ReactiveDB {
       });
 
       this.#__ws__.addEventListener("message", (stream) => {
-        // ignore non-json data
+        // ignore non-json data websocket
         if (validStream(stream.data)) {
           const { message } = JSON.parse(stream.data);
           const { data, uuid = "", event } = JSON.parse(message);
@@ -356,29 +360,25 @@ class ReactiveDB {
    * get data from database
    * @returns {Promise<any>} data
    */
-  public get<T extends any = any>(): Promise<T> {
-    return new Promise((resolve) => {
-      this.#Send({
-        to: this.#__to__!,
-        data: {
-          event: this.#__events__.get,
-          uuid: this.#__uuid__,
-        },
-      });
+  public async get<T extends any = any>(id?: string): Promise<T | T[]> {
+    try {
+      const url = new URL(this.#__parse__url.toHttp());
 
-      this.#__ws__.addEventListener("message", (stream) => {
-        if (validStream(stream.data)) {
-          const { message } = JSON.parse(stream.data);
-          const { data, uuid = "", event } = JSON.parse(message);
+      if (id) {
+        url.pathname = Routes.id
+          .replace(":collection", this.#__to__!)
+          .replace(":id", id);
+      } else {
+        url.pathname = Routes.collection.replace(":collection", this.#__to__!);
+      }
 
-          if (event === "get" && uuid === this.#__uuid__) {
-            const response = { data } as T;
+      const request = await fetch(url.toString());
+      const data = await request.json();
 
-            resolve(response);
-          }
-        }
-      });
-    });
+      return data as T;
+    } catch (error) {
+      throw ClientError(error.message);
+    }
   }
 
   /**

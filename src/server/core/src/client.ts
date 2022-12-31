@@ -1,5 +1,3 @@
-// import { WebSocket } from "../deps.ts";
-
 /**
  * The Client class represents a single end-user client.  It contains
  * information about their id, their web socket connection, and many more.

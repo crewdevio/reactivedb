@@ -2,14 +2,43 @@
 // deno-lint-ignore-file
 // This code was bundled using `deno bundle` and it's not recommended to edit it manually
 
+const { Deno  } = globalThis;
+typeof Deno?.noColor === "boolean" ? Deno.noColor : true;
+new RegExp([
+    "[\\u001B\\u009B][[\\]()#;?]*(?:(?:(?:(?:;[-a-zA-Z\\d\\/#&.:=?%@~_]+)*|[a-zA-Z\\d]+(?:;[-a-zA-Z\\d\\/#&.:=?%@~_]*)*)?\\u0007)",
+    "(?:(?:\\d{1,4}(?:;\\d{0,4})*)?[\\dA-PR-TZcf-nq-uy=><~]))"
+].join("|"), "g");
+var MutableEvents;
+(function(MutableEvents) {
+    MutableEvents["Remove"] = "child_removed";
+    MutableEvents["Change"] = "child_changed";
+    MutableEvents["Add"] = "child_added";
+    MutableEvents["Load"] = "load";
+    MutableEvents["Get"] = "get";
+})(MutableEvents || (MutableEvents = {}));
+const Routes = {
+    id: "/[v1]/:collection/:id",
+    collection: "/[v1]/:collection",
+    schema: "/[v1]/api_schema",
+    auth: {
+        register: "/[auth]/registeUserWithEmailAndPassword",
+        login: "/[auth]/loginWithEmailAndPassword",
+        delete: "/[auth]/deleteEmailAccount",
+        disable: "/[auth]/disableEmailAccount"
+    }
+};
 class Auth {
-    token = null;
     #url;
+    token = null;
     constructor(connection){
         this.#url = connection;
     }
     async registeUserWithEmailAndPassword(email, password) {
-        const response = await fetch(`${this.#url}/[auth]/registeUserWithEmailAndPassword?token=${this.token?.token}&uuid=${this.token?.uuid}`, {
+        const url = new URL(this.#url);
+        url.pathname = Routes.auth.register;
+        url.searchParams.set("token", this.token?.token);
+        url.searchParams.set("uuid", this.token?.uuid);
+        const response = await fetch(url.toString(), {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
@@ -26,7 +55,9 @@ class Auth {
         return data;
     }
     async loginWithEmailAndPassword(email, password) {
-        const response = await fetch(`${this.#url}/[auth]/loginWithEmailAndPassword`, {
+        const url = new URL(this.#url);
+        url.pathname = Routes.auth.login;
+        const response = await fetch(url.toString(), {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
@@ -44,39 +75,6 @@ class Auth {
         return this.token;
     }
 }
-function bytesToUuid(bytes) {
-    const bits = [
-        ...bytes
-    ].map((bit)=>{
-        const s = bit.toString(16);
-        return bit < 0x10 ? "0" + s : s;
-    });
-    return [
-        ...bits.slice(0, 4),
-        "-",
-        ...bits.slice(4, 6),
-        "-",
-        ...bits.slice(6, 8),
-        "-",
-        ...bits.slice(8, 10),
-        "-",
-        ...bits.slice(10, 16)
-    ].join("");
-}
-const UUID_RE = new RegExp("^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$", "i");
-function validate(id) {
-    return UUID_RE.test(id);
-}
-function generate() {
-    const rnds = crypto.getRandomValues(new Uint8Array(16));
-    rnds[6] = rnds[6] & 0x0f | 0x40;
-    rnds[8] = rnds[8] & 0x3f | 0x80;
-    return bytesToUuid(rnds);
-}
-const __default = {
-    validate,
-    generate
-};
 function parseURL(url) {
     let { protocol , hostname , port  } = new URL(url);
     if (![
@@ -102,8 +100,10 @@ const validStream = (stream)=>!stream.startsWith("Connected to") && stream.inclu
 function ClientWarning(message) {
     console.warn(`[ReactiveDB Client]: ${message}`);
 }
-function ClientError(message) {
-    return new Error(`[ReactiveDB Client]: ${message}`).message;
+function ClientError(message, err) {
+    return new Error(`[ReactiveDB Client]: ${message}`, {
+        cause: err
+    }).message;
 }
 const excludes = {
     collection: "[/collections/*]"
@@ -122,11 +122,13 @@ class ReactiveDB {
     #__url__;
     #__instance__ = true;
     #__filter__ = null;
+    #__parse__url;
     Auth;
     constructor(connection){
         const url = parseURL(connection);
         this.Auth = new Auth(url.toHttp());
-        this.#__uuid__ = __default.generate();
+        this.#__uuid__ = window.crypto.randomUUID();
+        this.#__parse__url = url;
         this.#__url__ = url.toWs();
         this.#__ws__ = this.#Websocket();
         this.#__invalidate__ = false;
@@ -145,7 +147,6 @@ class ReactiveDB {
     #Websocket() {
         const url = new URL(this.#__url__);
         url.searchParams.set("client-uid", this.#__uuid__);
-        console.log(url.toString());
         return new WebSocket(url.toString());
     }
     #Send({ to , data  }) {
@@ -169,7 +170,6 @@ class ReactiveDB {
                         excludes.collection
                     ]
                 }));
-                console.log("here");
                 callback(event);
             });
             this.#__instance__ = false;
@@ -192,7 +192,6 @@ class ReactiveDB {
                 });
             });
             this.#__ws__.addEventListener("message", (stream)=>{
-                console.log(stream.data);
                 if (validStream(stream.data)) {
                     const { message  } = JSON.parse(stream.data);
                     const { data , uuid ="" , event  } = JSON.parse(message);
@@ -265,28 +264,20 @@ class ReactiveDB {
         }
         return this;
     }
-    get() {
-        return new Promise((resolve)=>{
-            this.#Send({
-                to: this.#__to__,
-                data: {
-                    event: this.#__events__.get,
-                    uuid: this.#__uuid__
-                }
-            });
-            this.#__ws__.addEventListener("message", (stream)=>{
-                if (validStream(stream.data)) {
-                    const { message  } = JSON.parse(stream.data);
-                    const { data , uuid ="" , event  } = JSON.parse(message);
-                    if (event === "get" && uuid === this.#__uuid__) {
-                        const response = {
-                            data
-                        };
-                        resolve(response);
-                    }
-                }
-            });
-        });
+    async get(id) {
+        try {
+            const url = new URL(this.#__parse__url.toHttp());
+            if (id) {
+                url.pathname = Routes.id.replace(":collection", this.#__to__).replace(":id", id);
+            } else {
+                url.pathname = Routes.collection.replace(":collection", this.#__to__);
+            }
+            const request = await fetch(url.toString());
+            const data = await request.json();
+            return data;
+        } catch (error) {
+            throw ClientError(error.message);
+        }
     }
     onClose(callback = (_event)=>{}) {
         this.#__ws__.addEventListener("close", callback);
