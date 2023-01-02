@@ -70,8 +70,8 @@ export interface ApiCoreProps {
   connection: string | DataBaseProps;
 }
 
-//@ts-ignore
-export interface Context extends RouterContext {}
+
+export type Context = RouterContext<string>;
 
 export type HandlerFunction = (context: Context) => void | Promise<void>;
 

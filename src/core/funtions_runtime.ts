@@ -5,14 +5,14 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { importModule } from "../../imports/dynamic_import.ts";
+import { importModule, importString } from "../../imports/dynamic_import.ts";
 import { Logs, IS_DENO_DEPLOY } from "../shared/utils.ts";
 import { join, toFileUrl } from "../../imports/path.ts";
 import type { WalkEntry } from "../../imports/fs.ts";
 import type { HandlerFunction } from "../types.ts";
 import * as colors from "../../imports/fmt.ts";
 
-export async function handleFiles(file: WalkEntry) {
+export async function handleFiles(file: WalkEntry, count: number) {
   const groupRegx = /\[((?:.|\r?\n)+?)\]/gim;
 
   const [name, method, extention] = file.name.split(".");

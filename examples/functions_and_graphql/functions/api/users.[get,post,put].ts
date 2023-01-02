@@ -1,6 +1,6 @@
-import type { RouterContext } from "../../../../imports/oak.ts";
+import type { Context } from "../../../../mod.ts";
 
-export default async function Users(context: RouterContext) {
+export default async function Users(context: Context) {
   context.response.status = 200;
   context.response.body = "api/users app";
 }

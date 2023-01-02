@@ -1,4 +1,4 @@
-import type { Context, Utilities } from "../../../../../src/types.ts";
+import type { Context, Utilities } from "../../../../../mod.ts";
 
 export default async function Index(context: Context, utils: Utilities) {
   const x = await utils.Database.collection("users");

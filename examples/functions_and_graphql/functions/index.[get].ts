@@ -1,4 +1,4 @@
-import type { Context, Utilities } from "../../../src/types.ts";
+import type { Context, Utilities } from "../../../mod.ts";
 
 export default async function Index(context: Context, utils: Utilities) {
   try {
@@ -8,11 +8,11 @@ export default async function Index(context: Context, utils: Utilities) {
       .find(undefined, { noCursorTimeout: false })
       .toArray();
 
-    // utils.Events.post({
-    //   to: "packages",
-    //   data: [],
-    //   event: "child_removed",
-    // });
+    utils.Events.post({
+      to: "users",
+      data: [],
+      event: "child_added",
+    });
 
     context.response.status = 200;
     context.response.body = results;

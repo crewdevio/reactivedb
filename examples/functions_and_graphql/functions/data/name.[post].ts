@@ -1,4 +1,4 @@
-import type { Context, Utilities } from "../../../../src/types.ts";
+import type { Context, Utilities } from "../../../../mod.ts";
 
 export default async function Data(context: Context, utils: Utilities) {
   context.response.status = 200;

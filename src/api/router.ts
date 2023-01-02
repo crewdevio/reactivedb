@@ -29,13 +29,15 @@ export async function CreateRouter(DB: mongo.Database, secret: string) {
     path: string;
   }> = [];
 
+  let count = 0;
+
   if (await exists("./functions")) {
     for await (const file of walk("./functions", {
       exts: ["ts", "js", "tsx", "jsx"],
     })) {
       if (file.isFile && !file.name.startsWith("_")) {
         const { route, methods, handler, extention, name, path } =
-          await handleFiles(file);
+          await handleFiles(file, count);
 
         for (const method of methods) {
           schema.push({
@@ -56,6 +58,8 @@ export async function CreateRouter(DB: mongo.Database, secret: string) {
               await handler(ctx, { Database: DB, Events: reactiveEvents })
           );
         }
+
+        count++;
       }
     }
 
