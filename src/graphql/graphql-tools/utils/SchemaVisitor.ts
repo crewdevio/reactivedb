@@ -11,16 +11,16 @@ export abstract class SchemaVisitor {
   // Determine if this SchemaVisitor (sub)class implements a particular
   // visitor method.
   public static implementsVisitorMethod(methodName: string): boolean {
-    if (!methodName.startsWith('visit')) {
+    if (!methodName.startsWith("visit")) {
       return false;
     }
 
     const method = (this.prototype as any)[methodName];
-    if (typeof method !== 'function') {
+    if (typeof method !== "function") {
       return false;
     }
 
-    if (this.name === 'SchemaVisitor') {
+    if (this.name === "SchemaVisitor") {
       // The SchemaVisitor class implements every visitor method.
       return true;
     }
@@ -45,12 +45,12 @@ export abstract class SchemaVisitor {
   public visitSchema(_schema: any): void {}
 
   public visitScalar(
-    _scalar: any
+    _scalar: any,
     // eslint-disable-next-line @typescript-eslint/no-empty-function
   ): any | void | null {}
 
   public visitObject(
-    _object: any
+    _object: any,
     // eslint-disable-next-line @typescript-eslint/no-empty-function
   ): any | void | null {}
 
@@ -58,7 +58,7 @@ export abstract class SchemaVisitor {
     _field: any,
     _details: {
       objectType: any;
-    }
+    },
     // eslint-disable-next-line @typescript-eslint/no-empty-function
   ): any | void | null {}
 
@@ -67,12 +67,12 @@ export abstract class SchemaVisitor {
     _details: {
       field: any;
       objectType: any;
-    }
+    },
     // eslint-disable-next-line @typescript-eslint/no-empty-function
   ): any | void | null {}
 
   public visitInterface(
-    _iface: any
+    _iface: any,
     // eslint-disable-next-line @typescript-eslint/no-empty-function
   ): any | void | null {}
 
@@ -86,12 +86,12 @@ export abstract class SchemaVisitor {
     _value: any,
     _details: {
       enumType: any;
-    }
+    },
     // eslint-disable-next-line @typescript-eslint/no-empty-function
   ): any | void | null {}
 
   public visitInputObject(
-    _object: any
+    _object: any,
     // eslint-disable-next-line @typescript-eslint/no-empty-function
   ): any | void | null {}
 
@@ -99,7 +99,7 @@ export abstract class SchemaVisitor {
     _field: any,
     _details: {
       objectType: any;
-    }
+    },
     // eslint-disable-next-line @typescript-eslint/no-empty-function
   ): any | void | null {}
 }

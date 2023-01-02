@@ -9,7 +9,7 @@ import type { ILogger } from "./types.ts";
 export function decorateWithLogger(
   fn: any,
   logger: ILogger,
-  hint: string
+  hint: string,
 ): any {
   const resolver = fn != null ? fn : defaultFieldResolver;
 

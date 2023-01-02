@@ -70,7 +70,6 @@ export interface ApiCoreProps {
   connection: string | DataBaseProps;
 }
 
-
 export type Context = RouterContext<string>;
 
 export type HandlerFunction = (context: Context) => void | Promise<void>;

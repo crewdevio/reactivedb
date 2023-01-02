@@ -1,4 +1,4 @@
-import type { SchemaVisitor } from './SchemaVisitor.ts';
+import type { SchemaVisitor } from "./SchemaVisitor.ts";
 
 // graphql-js < v15 backwards compatible ExecutionResult
 // See: https://github.com/graphql/graphql-js/pull/2490
@@ -71,7 +71,11 @@ export type IEnumTypeResolver = Record<string, any> & {
   __extensionASTNodes?: Array<any>;
 };
 
-export interface IFieldResolverOptions<TSource = any, TContext = any, TArgs = any> {
+export interface IFieldResolverOptions<
+  TSource = any,
+  TContext = any,
+  TArgs = any,
+> {
   name?: string;
   description?: string;
   type?: any;
@@ -86,7 +90,9 @@ export interface IFieldResolverOptions<TSource = any, TContext = any, TArgs = an
 
 export type SchemaTransform = (originalSchema: any) => any;
 export type RequestTransform = (originalRequest: Request) => Request;
-export type ResultTransform = (originalResult: ExecutionResult) => ExecutionResult;
+export type ResultTransform = (
+  originalResult: ExecutionResult,
+) => ExecutionResult;
 
 export interface Transform {
   transformSchema?: SchemaTransform;
@@ -96,7 +102,7 @@ export interface Transform {
 
 export type FieldNodeMapper = (
   fieldNode: any,
-  fragments: Record<string, any>
+  fragments: Record<string, any>,
 ) => any | Array<any>;
 
 export type FieldNodeMappers = Record<string, Record<string, FieldNodeMapper>>;
@@ -104,13 +110,13 @@ export type FieldNodeMappers = Record<string, Record<string, FieldNodeMapper>>;
 export type FieldFilter = (
   typeName?: string,
   fieldName?: string,
-  fieldConfig?: any
+  fieldConfig?: any,
 ) => boolean;
 
 export type RootFieldFilter = (
-  operation?: 'Query' | 'Mutation' | 'Subscription',
+  operation?: "Query" | "Mutation" | "Subscription",
   rootFieldName?: string,
-  fieldConfig?: any
+  fieldConfig?: any,
 ) => boolean;
 
 export type RenameTypesOptions = {
@@ -118,11 +124,16 @@ export type RenameTypesOptions = {
   renameScalars: boolean;
 };
 
-export type IFieldResolver<TSource, TContext, TArgs = Record<string, any>, TReturn = any> = (
+export type IFieldResolver<
+  TSource,
+  TContext,
+  TArgs = Record<string, any>,
+  TReturn = any,
+> = (
   source: TSource,
   args: TArgs,
   context: TContext,
-  info: any
+  info: any,
 ) => TReturn;
 
 export type ITypedef = (() => Array<ITypedef>) | string | any;
@@ -130,7 +141,9 @@ export type ITypedef = (() => Array<ITypedef>) | string | any;
 export type ITypeDefinitions = ITypedef | Array<ITypedef>;
 
 export type IObjectTypeResolver<TSource = any, TContext = any, TArgs = any> = {
-  [key: string]: IFieldResolver<TSource, TContext, TArgs> | IFieldResolverOptions<TSource, TContext>;
+  [key: string]:
+    | IFieldResolver<TSource, TContext, TArgs>
+    | IFieldResolverOptions<TSource, TContext>;
 } & {
   __name?: string;
   __description?: string;
@@ -140,16 +153,20 @@ export type IObjectTypeResolver<TSource = any, TContext = any, TArgs = any> = {
   __extensionASTNodes?: any;
 };
 
-export type IInterfaceTypeResolver<TSource = any, TContext = any, TArgs = any> = {
-  [key: string]: IFieldResolver<TSource, TContext, TArgs> | IFieldResolverOptions<TSource, TContext>;
-} & {
-  __name?: string;
-  __description?: string;
-  __resolveType?: any;
-  __extensions?: Record<string, any>;
-  __astNode?: any;
-  __extensionASTNodes?: Array<any>;
-};
+export type IInterfaceTypeResolver<TSource = any, TContext = any, TArgs = any> =
+  & {
+    [key: string]:
+      | IFieldResolver<TSource, TContext, TArgs>
+      | IFieldResolverOptions<TSource, TContext>;
+  }
+  & {
+    __name?: string;
+    __description?: string;
+    __resolveType?: any;
+    __extensions?: Record<string, any>;
+    __astNode?: any;
+    __extensionASTNodes?: Array<any>;
+  };
 
 export type IUnionTypeResolver = {
   __name?: string;
@@ -168,14 +185,24 @@ export type IInputObjectTypeResolver = {
   __extensionASTNodes?: Array<any>;
 };
 
-export type ISchemaLevelResolver<TSource, TContext, TArgs = Record<string, any>, TReturn = any> = IFieldResolver<
+export type ISchemaLevelResolver<
+  TSource,
+  TContext,
+  TArgs = Record<string, any>,
+  TReturn = any,
+> = IFieldResolver<
   TSource,
   TContext,
   TArgs,
   TReturn
 >;
 
-export type IResolvers<TSource = any, TContext = any, TArgs = Record<string, any>, TReturn = any> = Record<
+export type IResolvers<
+  TSource = any,
+  TContext = any,
+  TArgs = Record<string, any>,
+  TReturn = any,
+> = Record<
   string,
   | ISchemaLevelResolver<TSource, TContext, TArgs, TReturn>
   | IObjectTypeResolver<TSource, TContext>
@@ -186,7 +213,11 @@ export type IResolvers<TSource = any, TContext = any, TArgs = Record<string, any
   | IInputObjectTypeResolver
 >;
 
-export type IFieldIteratorFn = (fieldDef: any, typeName: string, fieldName: string) => void;
+export type IFieldIteratorFn = (
+  fieldDef: any,
+  typeName: string,
+  fieldName: string,
+) => void;
 
 export type IDefaultValueIteratorFn = (type: any, value: any) => void;
 
@@ -197,14 +228,14 @@ export type DirectiveResolverFn<TSource = any, TContext = any> = (
   source: TSource,
   args: { [argName: string]: any },
   context: TContext,
-  info: any
+  info: any,
 ) => any;
 
 export interface IDirectiveResolvers<TSource = any, TContext = any> {
   [directiveName: string]: DirectiveResolverFn<TSource, TContext>;
 }
 
-export type Operation = 'query' | 'mutation' | 'subscription';
+export type Operation = "query" | "mutation" | "subscription";
 
 export interface Request {
   document: any;
@@ -216,23 +247,23 @@ export type VisitableSchemaType = any;
 
 export type VisitorSelector = (
   type: VisitableSchemaType,
-  methodName: string
+  methodName: string,
 ) => Array<SchemaVisitor | SchemaVisitorMap>;
 
 export enum VisitSchemaKind {
-  TYPE = 'VisitSchemaKind.TYPE',
-  SCALAR_TYPE = 'VisitSchemaKind.SCALAR_TYPE',
-  ENUM_TYPE = 'VisitSchemaKind.ENUM_TYPE',
-  COMPOSITE_TYPE = 'VisitSchemaKind.COMPOSITE_TYPE',
-  OBJECT_TYPE = 'VisitSchemaKind.OBJECT_TYPE',
-  INPUT_OBJECT_TYPE = 'VisitSchemaKind.INPUT_OBJECT_TYPE',
-  ABSTRACT_TYPE = 'VisitSchemaKind.ABSTRACT_TYPE',
-  UNION_TYPE = 'VisitSchemaKind.UNION_TYPE',
-  INTERFACE_TYPE = 'VisitSchemaKind.INTERFACE_TYPE',
-  ROOT_OBJECT = 'VisitSchemaKind.ROOT_OBJECT',
-  QUERY = 'VisitSchemaKind.QUERY',
-  MUTATION = 'VisitSchemaKind.MUTATION',
-  SUBSCRIPTION = 'VisitSchemaKind.SUBSCRIPTION',
+  TYPE = "VisitSchemaKind.TYPE",
+  SCALAR_TYPE = "VisitSchemaKind.SCALAR_TYPE",
+  ENUM_TYPE = "VisitSchemaKind.ENUM_TYPE",
+  COMPOSITE_TYPE = "VisitSchemaKind.COMPOSITE_TYPE",
+  OBJECT_TYPE = "VisitSchemaKind.OBJECT_TYPE",
+  INPUT_OBJECT_TYPE = "VisitSchemaKind.INPUT_OBJECT_TYPE",
+  ABSTRACT_TYPE = "VisitSchemaKind.ABSTRACT_TYPE",
+  UNION_TYPE = "VisitSchemaKind.UNION_TYPE",
+  INTERFACE_TYPE = "VisitSchemaKind.INTERFACE_TYPE",
+  ROOT_OBJECT = "VisitSchemaKind.ROOT_OBJECT",
+  QUERY = "VisitSchemaKind.QUERY",
+  MUTATION = "VisitSchemaKind.MUTATION",
+  SUBSCRIPTION = "VisitSchemaKind.SUBSCRIPTION",
 }
 
 export interface SchemaVisitorMap {
@@ -251,68 +282,77 @@ export interface SchemaVisitorMap {
   [VisitSchemaKind.SUBSCRIPTION]?: ObjectTypeVisitor;
 }
 
-export type NamedTypeVisitor = (type: any, schema: any) => any | null | undefined;
+export type NamedTypeVisitor = (
+  type: any,
+  schema: any,
+) => any | null | undefined;
 
 export type ScalarTypeVisitor = (
   type: any,
-  schema: any
+  schema: any,
 ) => any | null | undefined;
 
-export type EnumTypeVisitor = (type: any, schema: any) => any | null | undefined;
+export type EnumTypeVisitor = (
+  type: any,
+  schema: any,
+) => any | null | undefined;
 
 export type CompositeTypeVisitor = (
   type: any,
-  schema: any
+  schema: any,
 ) => any | null | undefined;
 
 export type ObjectTypeVisitor = (
   type: any,
-  schema: any
+  schema: any,
 ) => any | null | undefined;
 
 export type InputObjectTypeVisitor = (
   type: any,
-  schema: any
+  schema: any,
 ) => any | null | undefined;
 
 export type AbstractTypeVisitor = (
   type: any,
-  schema: any
+  schema: any,
 ) => any | null | undefined;
 
-export type UnionTypeVisitor = (type: any, schema: any) => any | null | undefined;
+export type UnionTypeVisitor = (
+  type: any,
+  schema: any,
+) => any | null | undefined;
 
 export type InterfaceTypeVisitor = (
   type: any,
-  schema: any
+  schema: any,
 ) => any | null | undefined;
 
 export enum MapperKind {
-  TYPE = 'MapperKind.TYPE',
-  SCALAR_TYPE = 'MapperKind.SCALAR_TYPE',
-  ENUM_TYPE = 'MapperKind.ENUM_TYPE',
-  COMPOSITE_TYPE = 'MapperKind.COMPOSITE_TYPE',
-  OBJECT_TYPE = 'MapperKind.OBJECT_TYPE',
-  INPUT_OBJECT_TYPE = 'MapperKind.INPUT_OBJECT_TYPE',
-  ABSTRACT_TYPE = 'MapperKind.ABSTRACT_TYPE',
-  UNION_TYPE = 'MapperKind.UNION_TYPE',
-  INTERFACE_TYPE = 'MapperKind.INTERFACE_TYPE',
-  ROOT_OBJECT = 'MapperKind.ROOT_OBJECT',
-  QUERY = 'MapperKind.QUERY',
-  MUTATION = 'MapperKind.MUTATION',
-  SUBSCRIPTION = 'MapperKind.SUBSCRIPTION',
-  DIRECTIVE = 'MapperKind.DIRECTIVE',
-  FIELD = 'MapperKind.FIELD',
-  COMPOSITE_FIELD = 'MapperKind.COMPOSITE_FIELD',
-  OBJECT_FIELD = 'MapperKind.OBJECT_FIELD',
-  ROOT_FIELD = 'MapperKind.ROOT_FIELD',
-  QUERY_ROOT_FIELD = 'MapperKind.QUERY_ROOT_FIELD',
-  MUTATION_ROOT_FIELD = 'MapperKind.MUTATION_ROOT_FIELD',
-  SUBSCRIPTION_ROOT_FIELD = 'MapperKind.SUBSCRIPTION_ROOT_FIELD',
-  INTERFACE_FIELD = 'MapperKind.INTERFACE_FIELD',
-  INPUT_OBJECT_FIELD = 'MapperKind.INPUT_OBJECT_FIELD',
-  ARGUMENT = 'MapperKind.ARGUMENT',
-  ENUM_VALUE = 'MapperKind.ENUM_VALUE',
+  TYPE = "MapperKind.TYPE",
+  SCALAR_TYPE = "MapperKind.SCALAR_TYPE",
+  ENUM_TYPE = "MapperKind.ENUM_TYPE",
+  COMPOSITE_TYPE = "MapperKind.COMPOSITE_TYPE",
+  OBJECT_TYPE = "MapperKind.OBJECT_TYPE",
+  INPUT_OBJECT_TYPE = "MapperKind.INPUT_OBJECT_TYPE",
+  ABSTRACT_TYPE = "MapperKind.ABSTRACT_TYPE",
+  UNION_TYPE = "MapperKind.UNION_TYPE",
+  INTERFACE_TYPE = "MapperKind.INTERFACE_TYPE",
+  ROOT_OBJECT = "MapperKind.ROOT_OBJECT",
+  QUERY = "MapperKind.QUERY",
+  MUTATION = "MapperKind.MUTATION",
+  SUBSCRIPTION = "MapperKind.SUBSCRIPTION",
+  DIRECTIVE = "MapperKind.DIRECTIVE",
+  FIELD = "MapperKind.FIELD",
+  COMPOSITE_FIELD = "MapperKind.COMPOSITE_FIELD",
+  OBJECT_FIELD = "MapperKind.OBJECT_FIELD",
+  ROOT_FIELD = "MapperKind.ROOT_FIELD",
+  QUERY_ROOT_FIELD = "MapperKind.QUERY_ROOT_FIELD",
+  MUTATION_ROOT_FIELD = "MapperKind.MUTATION_ROOT_FIELD",
+  SUBSCRIPTION_ROOT_FIELD = "MapperKind.SUBSCRIPTION_ROOT_FIELD",
+  INTERFACE_FIELD = "MapperKind.INTERFACE_FIELD",
+  INPUT_OBJECT_FIELD = "MapperKind.INPUT_OBJECT_FIELD",
+  ARGUMENT = "MapperKind.ARGUMENT",
+  ENUM_VALUE = "MapperKind.ENUM_VALUE",
 }
 
 export interface SchemaMapper {
@@ -343,52 +383,64 @@ export interface SchemaMapper {
   [MapperKind.DIRECTIVE]?: DirectiveMapper;
 }
 
-export type NamedTypeMapper = (type: any, schema: any) => any | null | undefined;
+export type NamedTypeMapper = (
+  type: any,
+  schema: any,
+) => any | null | undefined;
 
-export type ScalarTypeMapper = (type: any, schema: any) => any | null | undefined;
+export type ScalarTypeMapper = (
+  type: any,
+  schema: any,
+) => any | null | undefined;
 
 export type EnumTypeMapper = (type: any, schema: any) => any | null | undefined;
 
 export type EnumValueMapper = (
   value: any,
   typeName: string,
-  schema: any
+  schema: any,
 ) => any | [string, any] | null | undefined;
 
 export type CompositeTypeMapper = (
   type: any,
-  schema: any
-) =>any | null | undefined;
+  schema: any,
+) => any | null | undefined;
 
-export type ObjectTypeMapper = (type: any, schema: any) => any | null | undefined;
+export type ObjectTypeMapper = (
+  type: any,
+  schema: any,
+) => any | null | undefined;
 
 export type InputObjectTypeMapper = (
   type: any,
-  schema: any
+  schema: any,
 ) => any | null | undefined;
 
 export type AbstractTypeMapper = (
   type: any,
-  schema: any
+  schema: any,
 ) => any | null | undefined;
 
-export type UnionTypeMapper = (type: any, schema: any) => any | null | undefined;
+export type UnionTypeMapper = (
+  type: any,
+  schema: any,
+) => any | null | undefined;
 
 export type InterfaceTypeMapper = (
   type: any,
-  schema: any
+  schema: any,
 ) => any | null | undefined;
 
 export type DirectiveMapper = (
   directive: any,
-  schema: any
+  schema: any,
 ) => any | null | undefined;
 
 export type GenericFieldMapper<F extends any> = (
   fieldConfig: F,
   fieldName: string,
   typeName: string,
-  schema: any
+  schema: any,
 ) => F | [string, F] | null | undefined;
 
 export type FieldMapper = GenericFieldMapper<any>;
@@ -397,7 +449,7 @@ export type ArgumentMapper = (
   argumentConfig: any,
   fieldName: string,
   typeName: string,
-  schema: any
+  schema: any,
 ) => any | [string, any] | null | undefined;
 
 export type InputFieldMapper = GenericFieldMapper<any>;

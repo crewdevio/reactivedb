@@ -4,20 +4,20 @@ import {
   GraphQLInputObjectType,
   GraphQLInterfaceType,
   GraphQLList,
-  GraphQLObjectType,
   GraphQLNonNull,
+  GraphQLObjectType,
   GraphQLScalarType,
   GraphQLUnionType,
-  isInterfaceType,
   isEnumType,
   isInputObjectType,
+  isInterfaceType,
   isListType,
   isNamedType,
   isNonNullType,
   isObjectType,
   isScalarType,
-  isUnionType,
   isSpecifiedScalarType,
+  isUnionType,
 } from "../../deps.ts";
 
 import { getBuiltInForStub, isNamedStub } from "./stub.ts";
@@ -30,7 +30,7 @@ export function rewireTypes(
     skipPruning: boolean;
   } = {
     skipPruning: false,
-  }
+  },
 ): {
   typeMap: TypeMap;
   directives: Array<any>;
@@ -66,9 +66,9 @@ export function rewireTypes(
 
   return options.skipPruning
     ? {
-        typeMap: newTypeMap,
-        directives: newDirectives,
-      }
+      typeMap: newTypeMap,
+      directives: newDirectives,
+    }
     : pruneTypes(newTypeMap, newDirectives);
 
   function rewireDirective(directive: any): any {
@@ -108,7 +108,7 @@ export function rewireTypes(
       if ("interfaces" in newConfig) {
         newConfig.interfaces = () =>
           rewireNamedTypes(
-            ((config as unknown) as { interfaces: Array<any> }).interfaces
+            ((config as unknown) as { interfaces: Array<any> }).interfaces,
           );
       }
       return new (GraphQLInterfaceType as any)(newConfig);
@@ -204,7 +204,7 @@ export function rewireTypes(
 
 function pruneTypes(
   typeMap: TypeMap,
-  directives: Array<any>
+  directives: Array<any>,
 ): {
   typeMap: TypeMap;
   directives: Array<any>;

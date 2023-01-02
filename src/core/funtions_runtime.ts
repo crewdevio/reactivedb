@@ -6,7 +6,7 @@
  */
 
 import { importModule, importString } from "../../imports/dynamic_import.ts";
-import { Logs, IS_DENO_DEPLOY } from "../shared/utils.ts";
+import { IS_DENO_DEPLOY, Logs } from "../shared/utils.ts";
 import { join, toFileUrl } from "../../imports/path.ts";
 import type { WalkEntry } from "../../imports/fs.ts";
 import type { HandlerFunction } from "../types.ts";
@@ -44,11 +44,13 @@ export async function handleFiles(file: WalkEntry, count: number) {
     if (!methods.includes(method)) {
       Logs.error(
         colors.red(
-          `\n this method ${colors.yellow(
-            `"${method}"`
-          )} is not allowed, in file: ${colors.cyan(`${file.path}`)}\n`
+          `\n this method ${
+            colors.yellow(
+              `"${method}"`,
+            )
+          } is not allowed, in file: ${colors.cyan(`${file.path}`)}\n`,
         ),
-        true
+        true,
       );
     }
 
@@ -61,11 +63,13 @@ export async function handleFiles(file: WalkEntry, count: number) {
     if (!extentions.includes(ext)) {
       Logs.error(
         colors.red(
-          `this eimportModulextention file is not supported ${colors.yellow(
-            `"${ext}"`
-          )} is not supported, in file: ${colors.cyan(`${file.path}`)}\n`
+          `this extention file is not supported ${
+            colors.yellow(
+              `"${ext}"`,
+            )
+          } is not supported, in file: ${colors.cyan(`${file.path}`)}\n`,
         ),
-        true
+        true,
       );
     }
 
@@ -102,14 +106,20 @@ export async function handleFiles(file: WalkEntry, count: number) {
 
   if (!handlerFunction || typeof handlerFunction !== "function") {
     Logs.error(
-      `\n in ${colors.green(
-        file.path
-      )}\n file should export a function by default: ${`${colors.magenta(
-        "export default"
-      )} ${colors.green("function")}${colors.red("(")}ctx, utils${colors.red(
-        ")"
-      )} ${colors.red("{")} ... ${colors.red("}")}\n`}`,
-      true
+      `\n in ${
+        colors.green(
+          file.path,
+        )
+      }\n file should export a function by default: ${`${
+        colors.magenta(
+          "export default",
+        )
+      } ${colors.green("function")}${colors.red("(")}ctx, utils${
+        colors.red(
+          ")",
+        )
+      } ${colors.red("{")} ... ${colors.red("}")}\n`}`,
+      true,
     );
 
     handlerFunction = (ctx: any) => {};

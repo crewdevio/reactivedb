@@ -1,10 +1,10 @@
 import { getNamedType, isScalarType } from "../../deps.ts";
 
-import { IResolverValidationOptions, forEachField } from '../utils/index.ts';
+import { forEachField, IResolverValidationOptions } from "../utils/index.ts";
 
 export function assertResolversPresent(
   schema: any,
-  resolverValidationOptions: IResolverValidationOptions = {}
+  resolverValidationOptions: IResolverValidationOptions = {},
 ): void {
   const {
     requireResolversForArgs = false,
@@ -12,11 +12,14 @@ export function assertResolversPresent(
     requireResolversForAllFields = false,
   } = resolverValidationOptions;
 
-  if (requireResolversForAllFields && (requireResolversForArgs || requireResolversForNonScalar)) {
+  if (
+    requireResolversForAllFields &&
+    (requireResolversForArgs || requireResolversForNonScalar)
+  ) {
     throw new TypeError(
-      'requireResolversForAllFields takes precedence over the more specific assertions. ' +
-        'Please configure either requireResolversForAllFields or requireResolversForArgs / ' +
-        'requireResolversForNonScalar, but not a combination of them.'
+      "requireResolversForAllFields takes precedence over the more specific assertions. " +
+        "Please configure either requireResolversForAllFields or requireResolversForArgs / " +
+        "requireResolversForNonScalar, but not a combination of them.",
     );
   }
 
@@ -32,7 +35,9 @@ export function assertResolversPresent(
     }
 
     // requires a resolver on every field that returns a non-scalar type
-    if (requireResolversForNonScalar && !isScalarType(getNamedType(field.type))) {
+    if (
+      requireResolversForNonScalar && !isScalarType(getNamedType(field.type))
+    ) {
       expectResolver(field, typeName, fieldName);
     }
   });
@@ -47,11 +52,11 @@ To disable this warning check pass;
 resolverValidationOptions: {
   requireResolversForNonScalar: false
 }
-      `
+      `,
     );
     return;
   }
-  if (typeof field.resolve !== 'function') {
+  if (typeof field.resolve !== "function") {
     throw new Error(`Resolver "${typeName}.${fieldName}" must be a function`);
   }
 }

@@ -10,24 +10,28 @@ import { Application } from "../../imports/server_oak.ts";
 import * as mongo from "../../imports/mongo.ts";
 import { CreateRouter } from "./router.ts";
 
-export async function Api(DB: mongo.Database, secret: string, app: Application) {
+export async function Api(
+  DB: mongo.Database,
+  secret: string,
+  app: Application,
+) {
   const Router = await CreateRouter(DB, secret);
 
   app.use(async (ctx, next) => {
     ctx.response.headers.set("Access-Control-Allow-Origin", "*");
     ctx.response.headers.set(
       "Access-Control-Allow-Methods",
-      "POST, PUT, GET, OPTIONS"
+      "POST, PUT, GET, OPTIONS",
     );
 
     ctx.response.headers.set(
       "Access-Control-Allow-Headers",
-      "Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With"
+      "Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With",
     );
 
     ctx.response.headers.set(
       "x-powered-by",
-      "ReactiveDB x Deno"
+      "ReactiveDB x Deno",
     );
 
     // !Buttercubz: don't works on deno deploy :(

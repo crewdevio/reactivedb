@@ -1,5 +1,5 @@
 export default function (...rest: any) {
-console.log('set', rest);
+  console.log("set", rest);
   return {
     done: true,
   };

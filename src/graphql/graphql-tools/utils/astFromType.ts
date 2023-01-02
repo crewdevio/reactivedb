@@ -1,11 +1,13 @@
-import { isNonNullType, Kind, isListType } from "../../deps.ts";
+import { isListType, isNonNullType, Kind } from "../../deps.ts";
 
 export function astFromType(type: any): any {
   if (isNonNullType(type)) {
     const innerType = astFromType(type.ofType);
     if (innerType.kind === Kind.NON_NULL_TYPE) {
       throw new Error(
-        `Invalid type node ${JSON.stringify(type)}. Inner type of non-null type cannot be a non-null type.`
+        `Invalid type node ${
+          JSON.stringify(type)
+        }. Inner type of non-null type cannot be a non-null type.`,
       );
     }
     return {

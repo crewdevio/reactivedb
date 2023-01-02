@@ -1,6 +1,6 @@
 import { GraphQLError } from "../../deps.ts";
 
-export const ERROR_SYMBOL = Symbol('subschemaErrors');
+export const ERROR_SYMBOL = Symbol("subschemaErrors");
 
 export function relocatedError(originalError: any, path: any): any {
   return new (GraphQLError as any)(
@@ -10,17 +10,22 @@ export function relocatedError(originalError: any, path: any): any {
     originalError.positions,
     path != null ? path : originalError.path,
     originalError.originalError,
-    originalError.extensions
+    originalError.extensions,
   );
 }
 
 export function slicedError(originalError: any) {
-  return relocatedError(originalError, originalError.path != null ? originalError.path.slice(1) : undefined);
+  return relocatedError(
+    originalError,
+    originalError.path != null ? originalError.path.slice(1) : undefined,
+  );
 }
 
-export function getErrorsByPathSegment(errors: ReadonlyArray<any>): Record<string, Array<any>> {
+export function getErrorsByPathSegment(
+  errors: ReadonlyArray<any>,
+): Record<string, Array<any>> {
   const record = Object.create(null);
-  errors.forEach(error => {
+  errors.forEach((error) => {
     if (!error.path || error.path.length < 2) {
       return;
     }
@@ -38,8 +43,16 @@ export function getErrorsByPathSegment(errors: ReadonlyArray<any>): Record<strin
 export class CombinedError extends (GraphQLError as any) {
   public errors: ReadonlyArray<Error>;
   constructor(errors: ReadonlyArray<Error>) {
-    const message = errors.map(error => error.message).join('\n');
-    super(message, undefined, undefined, undefined, undefined, undefined, undefined);
+    const message = errors.map((error) => error.message).join("\n");
+    super(
+      message,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+    );
     const actualErrors = errors.map((error: any) =>
       error.originalError != null ? error.originalError : error
     );

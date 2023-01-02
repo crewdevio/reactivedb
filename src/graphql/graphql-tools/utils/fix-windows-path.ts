@@ -1,1 +1,1 @@
-export const fixWindowsPath = (path: string) => path.replace(/\\/g, '/');
+export const fixWindowsPath = (path: string) => path.replace(/\\/g, "/");

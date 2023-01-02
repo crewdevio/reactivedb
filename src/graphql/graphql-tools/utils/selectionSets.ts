@@ -1,11 +1,14 @@
-import { parse, Kind, getNamedType } from "../../deps.ts";
+import { getNamedType, Kind, parse } from "../../deps.ts";
 
 export function parseSelectionSet(selectionSet: string): any {
   const query = (parse as any)(selectionSet).definitions[0] as any;
   return query.selectionSet;
 }
 
-export function typeContainsSelectionSet(type: any, selectionSet: any): boolean {
+export function typeContainsSelectionSet(
+  type: any,
+  selectionSet: any,
+): boolean {
   const fields = type.getFields();
 
   for (const selection of selectionSet.selections) {
@@ -17,10 +20,16 @@ export function typeContainsSelectionSet(type: any, selectionSet: any): boolean 
       }
 
       if (selection.selectionSet != null) {
-        return typeContainsSelectionSet(getNamedType(field.type) as any, selection.selectionSet);
+        return typeContainsSelectionSet(
+          getNamedType(field.type) as any,
+          selection.selectionSet,
+        );
       }
     } else if (selection.kind === Kind.INLINE_FRAGMENT) {
-      const containsSelectionSet = typeContainsSelectionSet(type, selection.selectionSet);
+      const containsSelectionSet = typeContainsSelectionSet(
+        type,
+        selection.selectionSet,
+      );
       if (!containsSelectionSet) {
         return false;
       }

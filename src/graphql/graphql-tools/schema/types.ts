@@ -1,10 +1,10 @@
 import type {
-  ITypeDefinitions,
+  GraphQLParseOptions,
+  IDirectiveResolvers,
   IResolvers,
   IResolverValidationOptions,
-  IDirectiveResolvers,
+  ITypeDefinitions,
   SchemaDirectiveVisitorClass,
-  GraphQLParseOptions,
   SchemaTransform,
 } from "../utils/index.ts";
 

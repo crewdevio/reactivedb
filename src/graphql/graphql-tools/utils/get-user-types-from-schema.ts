@@ -15,16 +15,24 @@ export function getUserTypesFromSchema(schema: any): any[] {
   const modelTypes = Object.values(allTypesMap).filter((graphqlType: any) => {
     if (isObjectType(graphqlType)) {
       // Filter out private types
-      if (graphqlType.name.startsWith('__')) {
+      if (graphqlType.name.startsWith("__")) {
         return false;
       }
-      if (schema.getMutationType() && graphqlType.name === schema.getMutationType().name) {
+      if (
+        schema.getMutationType() &&
+        graphqlType.name === schema.getMutationType().name
+      ) {
         return false;
       }
-      if (schema.getQueryType() && graphqlType.name === schema.getQueryType().name) {
+      if (
+        schema.getQueryType() && graphqlType.name === schema.getQueryType().name
+      ) {
         return false;
       }
-      if (schema.getSubscriptionType() && graphqlType.name === schema.getSubscriptionType().name) {
+      if (
+        schema.getSubscriptionType() &&
+        graphqlType.name === schema.getSubscriptionType().name
+      ) {
         return false;
       }
 

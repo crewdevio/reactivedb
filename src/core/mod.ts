@@ -50,7 +50,7 @@ export async function ReactiveCore({
   │                                                    │
   │    ${message}     │
   │                                                    │
-  ╰────────────────────────────────────────────────────╯\n`)
+  ╰────────────────────────────────────────────────────╯\n`),
   );
 
   // store offline actions for clients
@@ -66,7 +66,7 @@ export async function ReactiveCore({
       JSON.stringify({
         data: data ?? {},
         event,
-      })
+      }),
     );
   });
 
@@ -90,7 +90,7 @@ export async function ReactiveCore({
               data: [],
               uuid: uuid ?? "",
               event,
-            })
+            }),
           );
         } else {
           server.to(
@@ -99,7 +99,7 @@ export async function ReactiveCore({
               data: [...transform(finds)],
               uuid: uuid ?? "",
               event,
-            })
+            }),
           );
         }
 
@@ -120,7 +120,7 @@ export async function ReactiveCore({
           JSON.stringify({
             event,
             data: [...transform(finds)],
-          })
+          }),
         );
       }
 
@@ -133,7 +133,7 @@ export async function ReactiveCore({
               data: [],
               uuid: uuid ?? "",
               event,
-            })
+            }),
           );
         } else {
           server.to(
@@ -142,7 +142,7 @@ export async function ReactiveCore({
               data: [...transform(finds)],
               uuid: uuid ?? "",
               event,
-            })
+            }),
           );
         }
       }
@@ -161,7 +161,7 @@ export async function ReactiveCore({
           JSON.stringify({
             event,
             data: [...transform(finds)],
-          })
+          }),
         );
       }
 
@@ -171,7 +171,7 @@ export async function ReactiveCore({
 
         await data.updateOne(
           { _id: new Bson.ObjectId(id) },
-          { $set: { ...New } }
+          { $set: { ...New } },
         );
 
         const finds = await data
@@ -183,7 +183,7 @@ export async function ReactiveCore({
           JSON.stringify({
             event,
             data: [...transform(finds)],
-          })
+          }),
         );
       }
     });
@@ -211,7 +211,7 @@ export async function ReactiveCore({
                 JSON.stringify({
                   event: action,
                   data: [...transform(finds)],
-                })
+                }),
               );
             }
 
@@ -228,7 +228,7 @@ export async function ReactiveCore({
                 JSON.stringify({
                   event: action,
                   data: [...transform(finds)],
-                })
+                }),
               );
             }
 
@@ -237,7 +237,7 @@ export async function ReactiveCore({
 
               await db.updateOne(
                 { _id: new Bson.ObjectId(id) },
-                { $set: { ...New } }
+                { $set: { ...New } },
               );
               const finds = await db
                 .find(undefined, { noCursorTimeout: false })
@@ -248,7 +248,7 @@ export async function ReactiveCore({
                 JSON.stringify({
                   event: action,
                   data: [...transform(finds)],
-                })
+                }),
               );
             }
           });

@@ -26,16 +26,12 @@
 // enhanceSchema can fill this gap by adding an additional round of rewiring.
 //
 
-import {
-  GraphQLSchema,
-  isNamedType,
-  isDirective,
-} from "../../deps.ts";
-import { rewireTypes } from './rewire.ts';
+import { GraphQLSchema, isDirective, isNamedType } from "../../deps.ts";
+import { rewireTypes } from "./rewire.ts";
 
 export function addTypes(
   schema: any,
-  newTypesOrDirectives: Array<any | any>
+  newTypesOrDirectives: Array<any | any>,
 ): any {
   const queryType = schema.getQueryType();
   const mutationType = schema.getMutationType();
@@ -43,7 +39,9 @@ export function addTypes(
 
   const queryTypeName = queryType != null ? queryType.name : undefined;
   const mutationTypeName = mutationType != null ? mutationType.name : undefined;
-  const subscriptionTypeName = subscriptionType != null ? subscriptionType.name : undefined;
+  const subscriptionTypeName = subscriptionType != null
+    ? subscriptionType.name
+    : undefined;
 
   const config = schema.toConfig();
 
@@ -57,7 +55,7 @@ export function addTypes(
     originalDirectiveMap[directive.name] = directive;
   });
 
-  newTypesOrDirectives.forEach(newTypeOrDirective => {
+  newTypesOrDirectives.forEach((newTypeOrDirective) => {
     if (isNamedType(newTypeOrDirective)) {
       originalTypeMap[newTypeOrDirective.name] = newTypeOrDirective;
     } else if (isDirective(newTypeOrDirective)) {
@@ -67,15 +65,19 @@ export function addTypes(
 
   const { typeMap, directives } = rewireTypes(
     originalTypeMap,
-    Object.keys(originalDirectiveMap).map(directiveName => originalDirectiveMap[directiveName])
+    Object.keys(originalDirectiveMap).map((directiveName) =>
+      originalDirectiveMap[directiveName]
+    ),
   );
 
   return new (GraphQLSchema as any)({
     ...config,
     query: queryTypeName ? (typeMap[queryTypeName] as any) : undefined,
     mutation: mutationTypeName ? (typeMap[mutationTypeName] as any) : undefined,
-    subscription: subscriptionTypeName != null ? (typeMap[subscriptionTypeName] as any) : undefined,
-    types: Object.keys(typeMap).map(typeName => typeMap[typeName]),
+    subscription: subscriptionTypeName != null
+      ? (typeMap[subscriptionTypeName] as any)
+      : undefined,
+    types: Object.keys(typeMap).map((typeName) => typeMap[typeName]),
     directives,
   });
 }

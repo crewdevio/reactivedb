@@ -23,7 +23,7 @@ function parseBOM(content: string): any {
 export function parseGraphQLJSON(
   location: string,
   jsonContent: string,
-  options: SchemaPrintOptions & any
+  options: SchemaPrintOptions & any,
 ): Source {
   let parsedJson = parseBOM(jsonContent);
 

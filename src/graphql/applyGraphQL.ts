@@ -1,5 +1,8 @@
-import { graphql, gql } from "./deps.ts";
-import { renderPlaygroundPage, ISettings } from "./graphql-playground-html/render-playground-html.ts";
+import { gql, graphql } from "./deps.ts";
+import {
+  ISettings,
+  renderPlaygroundPage,
+} from "./graphql-playground-html/render-playground-html.ts";
 import { makeExecutableSchema } from "./graphql-tools/schema/makeExecutableSchema.ts";
 import { fileUploadMiddleware, GraphQLUpload } from "./fileUpload.ts";
 
@@ -35,7 +38,7 @@ export async function applyGraphQL<T>({
   resolvers,
   context,
   usePlayground = true,
-  settings
+  settings,
 }: ApplyGraphQLOptions<T>): Promise<T> {
   const router = new Router();
 
@@ -43,7 +46,7 @@ export async function applyGraphQL<T>({
   augmentedTypeDefs.push(
     gql`
       scalar Upload
-    `
+    `,
   );
   if (Array.isArray(resolvers)) {
     if (resolvers.every((resolver) => !resolver.Upload)) {
@@ -72,7 +75,7 @@ export async function applyGraphQL<T>({
           resolvers,
           contextResult,
           body.variables || undefined,
-          body.operationName || undefined
+          body.operationName || undefined,
         );
 
         response.status = 200;
@@ -105,7 +108,7 @@ export async function applyGraphQL<T>({
         const playground = renderPlaygroundPage({
           endpoint: request.url.origin + path,
           subscriptionEndpoint: request.url.origin,
-          settings
+          settings,
         });
         response.status = 200;
         response.body = playground;

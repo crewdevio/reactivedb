@@ -56,7 +56,10 @@ export class EventEmitter {
    * @returns A Client instance for use in the socket-client connection
    * lifecycle.
    */
-  public createClient(clientId: string, clientSocket: globalThis.WebSocket): Client {
+  public createClient(
+    clientId: string,
+    clientSocket: globalThis.WebSocket,
+  ): Client {
     const client = new Client(clientId, clientSocket);
     this.clients[clientId] = client;
     return client;

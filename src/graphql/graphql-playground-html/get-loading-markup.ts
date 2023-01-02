@@ -429,6 +429,6 @@ const getLoadingMarkup = () => ({
 </div>
 </div>
 `,
-})
+});
 
-export default getLoadingMarkup
+export default getLoadingMarkup;

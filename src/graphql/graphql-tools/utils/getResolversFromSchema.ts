@@ -1,10 +1,10 @@
 import {
-  isScalarType,
   isEnumType,
   isInterfaceType,
-  isUnionType,
   isObjectType,
+  isScalarType,
   isSpecifiedScalarType,
+  isUnionType,
 } from "../../deps.ts";
 
 import type { IResolvers } from "./Interfaces.ts";

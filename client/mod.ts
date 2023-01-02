@@ -147,7 +147,7 @@ class ReactiveDB {
           to,
           message: data,
         },
-      })
+      }),
     );
   }
 
@@ -181,7 +181,7 @@ class ReactiveDB {
         this.#__ws__.send(
           JSON.stringify({
             connect_to: [this.#__to__, excludes.collection],
-          })
+          }),
         );
 
         callback(event!);
@@ -190,7 +190,7 @@ class ReactiveDB {
       this.#__instance__ = false;
     } else {
       ClientWarning(
-        "you can't connect to multiple collection using only one instance."
+        "you can't connect to multiple collection using only one instance.",
       );
     }
 
@@ -229,7 +229,7 @@ class ReactiveDB {
    */
   public on<T extends any = any>(
     evt: ReactiveEvents,
-    callback = (_data: T | T[], _event?: ReactiveEvents) => {}
+    callback = (_data: T | T[], _event?: ReactiveEvents) => {},
   ) {
     if (!this.#__invalidate__) {
       this.#Connected(() => {
@@ -251,13 +251,13 @@ class ReactiveDB {
           const { message } = JSON.parse(stream.data);
           const { data, uuid = "", event } = JSON.parse(message);
 
-          const isLoadEvent =
-            uuid === this.#__uuid__ && event === this.#__events__.load;
+          const isLoadEvent = uuid === this.#__uuid__ &&
+            event === this.#__events__.load;
 
           if (event === excludes.collection) {
             if (!data[0].includes(this.#__to__)) {
               throw ClientError(
-                `"${this.#__to__}" collection not exists in the database.`
+                `"${this.#__to__}" collection not exists in the database.`,
               );
             }
           }

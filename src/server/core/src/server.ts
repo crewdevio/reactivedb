@@ -114,7 +114,6 @@ export class Server extends EventEmitter {
     this.Database = Database;
     this.options = options;
 
-
     await Api(this.Database, this.secret, this.oak_server);
     await this.acceptWebSockets();
 
@@ -167,7 +166,7 @@ export class Server extends EventEmitter {
 
           ws.addEventListener("close", async () => {
             await this.transmitter.handlePacket(
-              new Packet(client, `disconnect`)
+              new Packet(client, `disconnect`),
             );
             super.removeClient(client.id);
           });
@@ -202,7 +201,7 @@ export class Server extends EventEmitter {
    */
   protected async handleMessageAsString(
     client: Client,
-    message: string
+    message: string,
   ): Promise<void> {
     switch (message) {
       case "id":
@@ -216,7 +215,7 @@ export class Server extends EventEmitter {
 
       case "test":
         return client.socket.send(
-          `Server started on ${this.options?.hostname}:${this.options?.port}.`
+          `Server started on ${this.options?.hostname}:${this.options?.port}.`,
         );
 
       // If the message isn't any of the above, then it we expect the message
@@ -235,7 +234,7 @@ export class Server extends EventEmitter {
    */
   protected async handleMessageAsJsonString(
     client: Client,
-    message: string
+    message: string,
   ): Promise<void> {
     try {
       const json = JSON.parse(message);
@@ -253,7 +252,7 @@ export class Server extends EventEmitter {
         const packet = new Packet(
           client,
           json.send_packet.to,
-          json.send_packet.message
+          json.send_packet.message,
         );
         return await this.transmitter.handlePacket(packet);
       }

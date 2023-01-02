@@ -5,6 +5,7 @@
     "build:windows": "deno compile -A --unstable --target x86_64-pc-windows-msvc -o ./reactivedb_windows ./main.ts",
     "build:linux": "deno compile -A --unstable --target x86_64-unknown-linux-gnu -o ./reactivedb_linux ./main.ts",
     "build:macos": "deno compile -A --unstable --target x86_64-apple-darwin -o ./reactivedb_macos ./main.ts",
-    "build:macos_m1": "deno compile -A --unstable --target aarch64-apple-darwin -o ./reactivedb_macos_m1 ./main.ts"
+    "build:macos_m1": "deno compile -A --unstable --target aarch64-apple-darwin -o ./reactivedb_macos_m1 ./main.ts",
+    "fmt": "deno fmt"
   }
 }

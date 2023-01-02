@@ -24,7 +24,7 @@ export class PubSub extends PubSubEngine {
 
   public subscribe(
     triggerName: string,
-    onMessage: (...args: any[]) => void
+    onMessage: (...args: any[]) => void,
   ): Promise<number> {
     this.ee.addListener(triggerName, onMessage);
     this.subIdCounter = this.subIdCounter + 1;

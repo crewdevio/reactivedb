@@ -25,9 +25,7 @@ export function parseURL(url: string) {
     toWs() {
       const host = hostname === "localhost" ? "127.0.0.1" : hostname;
 
-      return `${
-        isHTTPS ? "wss:" : "ws:"
-      }//${host}${port}/[WebSocket]`;
+      return `${isHTTPS ? "wss:" : "ws:"}//${host}${port}/[WebSocket]`;
     },
     toHttp() {
       const host = hostname === "localhost" ? "127.0.0.1" : hostname;

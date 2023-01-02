@@ -1,7 +1,10 @@
-import { ConnectionContext } from '../server.ts';
-import MessageTypes from '../message-types.ts';
+import { ConnectionContext } from "../server.ts";
+import MessageTypes from "../message-types.ts";
 
-export const parseLegacyProtocolMessage = (connectionContext: ConnectionContext, message: any) => {
+export const parseLegacyProtocolMessage = (
+  connectionContext: ConnectionContext,
+  message: any,
+) => {
   let messageToReturn = message;
 
   switch (message.type) {
@@ -31,8 +34,11 @@ export const parseLegacyProtocolMessage = (connectionContext: ConnectionContext,
     case MessageTypes.GQL_CONNECTION_ERROR:
       if (connectionContext.isLegacy) {
         messageToReturn = {
-          ...message, type: MessageTypes.INIT_FAIL,
-          payload: message.payload.message ? { error: message.payload.message } : message.payload,
+          ...message,
+          type: MessageTypes.INIT_FAIL,
+          payload: message.payload.message
+            ? { error: message.payload.message }
+            : message.payload,
         };
       }
       break;

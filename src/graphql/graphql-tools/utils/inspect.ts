@@ -10,13 +10,15 @@ export function inspect(value: any): string {
 
 function formatValue(value: any, seenValues: Array<any>): string {
   switch (typeof value) {
-    case 'string':
+    case "string":
       return JSON.stringify(value);
-    case 'function':
-      return value.name ? `[function ${(value as (...args: any[]) => any).name}]` : '[function]';
-    case 'object':
+    case "function":
+      return value.name
+        ? `[function ${(value as (...args: any[]) => any).name}]`
+        : "[function]";
+    case "object":
       if (value === null) {
-        return 'null';
+        return "null";
       }
       return formatObjectValue(value, seenValues);
     default:
@@ -24,9 +26,12 @@ function formatValue(value: any, seenValues: Array<any>): string {
   }
 }
 
-function formatObjectValue(value: any, previouslySeenValues: Array<any>): string {
+function formatObjectValue(
+  value: any,
+  previouslySeenValues: Array<any>,
+): string {
   if (previouslySeenValues.indexOf(value) !== -1) {
-    return '[Circular]';
+    return "[Circular]";
   }
 
   const seenValues = [...previouslySeenValues, value];
@@ -37,7 +42,9 @@ function formatObjectValue(value: any, previouslySeenValues: Array<any>): string
 
     // check for infinite recursion
     if (customValue !== value) {
-      return typeof customValue === 'string' ? customValue : formatValue(customValue, seenValues);
+      return typeof customValue === "string"
+        ? customValue
+        : formatValue(customValue, seenValues);
     }
   } else if (Array.isArray(value)) {
     return formatArray(value, seenValues);
@@ -49,28 +56,28 @@ function formatObjectValue(value: any, previouslySeenValues: Array<any>): string
 function formatObject(object: any, seenValues: Array<any>) {
   const keys = Object.keys(object);
   if (keys.length === 0) {
-    return '{}';
+    return "{}";
   }
 
   if (seenValues.length > MAX_RECURSIVE_DEPTH) {
-    return '[' + getObjectTag(object) + ']';
+    return "[" + getObjectTag(object) + "]";
   }
 
-  const properties = keys.map(key => {
+  const properties = keys.map((key) => {
     const value = formatValue(object[key], seenValues);
-    return key + ': ' + value;
+    return key + ": " + value;
   });
 
-  return '{ ' + properties.join(', ') + ' }';
+  return "{ " + properties.join(", ") + " }";
 }
 
 function formatArray(array: Array<any>, seenValues: Array<any>): string {
   if (array.length === 0) {
-    return '[]';
+    return "[]";
   }
 
   if (seenValues.length > MAX_RECURSIVE_DEPTH) {
-    return '[Array]';
+    return "[Array]";
   }
 
   const len = Math.min(MAX_ARRAY_LENGTH, array.length);
@@ -82,16 +89,16 @@ function formatArray(array: Array<any>, seenValues: Array<any>): string {
   }
 
   if (remaining === 1) {
-    items.push('... 1 more item');
+    items.push("... 1 more item");
   } else if (remaining > 1) {
     items.push(`... ${remaining.toString(10)} more items`);
   }
 
-  return '[' + items.join(', ') + ']';
+  return "[" + items.join(", ") + "]";
 }
 
 function getCustomFn(obj: any) {
-  if (typeof obj.inspect === 'function') {
+  if (typeof obj.inspect === "function") {
     return obj.inspect;
   }
 }
@@ -99,12 +106,12 @@ function getCustomFn(obj: any) {
 function getObjectTag(obj: any): string {
   const tag = Object.prototype.toString
     .call(obj)
-    .replace(/^\[object /, '')
-    .replace(/]$/, '');
+    .replace(/^\[object /, "")
+    .replace(/]$/, "");
 
-  if (tag === 'Object' && typeof obj.constructor === 'function') {
+  if (tag === "Object" && typeof obj.constructor === "function") {
     const name = obj.constructor.name;
-    if (typeof name === 'string' && name !== '') {
+    if (typeof name === "string" && name !== "") {
       return name;
     }
   }

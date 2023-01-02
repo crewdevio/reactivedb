@@ -51,7 +51,7 @@ import { getArgumentValues } from "./getArgumentValues.ts";
 
 export class SchemaDirectiveVisitor<
   TArgs = any,
-  TContext = any
+  TContext = any,
 > extends SchemaVisitor {
   // The name of the directive this visitor is allowed to visit (that is, the
   // identifier that appears after the @ character in the schema). Note that
@@ -81,7 +81,7 @@ export class SchemaDirectiveVisitor<
   // appear. By default, any declaration found in the schema will be returned.
   public static getDirectiveDeclaration(
     directiveName: string,
-    schema: any
+    schema: any,
   ): any | null | undefined {
     return schema.getDirective(directiveName);
   }
@@ -102,7 +102,7 @@ export class SchemaDirectiveVisitor<
     directiveVisitors: Record<string, SchemaDirectiveVisitorClass>,
     // Optional context object that will be available to all visitor instances
     // via this.context. Defaults to an empty null-prototype object.
-    context: Record<string, any> = Object.create(null)
+    context: Record<string, any> = Object.create(null),
     // The visitSchemaDirectives method returns a map from directive names to
     // lists of SchemaDirectiveVisitors created while visiting the schema.
   ): Record<string, Array<SchemaDirectiveVisitor>> {
@@ -111,7 +111,7 @@ export class SchemaDirectiveVisitor<
     // an occurrence of the directive while walking the schema below.
     const declaredDirectives = this.getDeclaredDirectives(
       schema,
-      directiveVisitors
+      directiveVisitors,
     );
 
     // Map from directive names to lists of SchemaDirectiveVisitor instances
@@ -121,7 +121,7 @@ export class SchemaDirectiveVisitor<
         ...prev,
         [item]: [],
       }),
-      {}
+      {},
     );
 
     const directiveVisitorMap: any = Object.entries(directiveVisitors).reduce(
@@ -129,12 +129,12 @@ export class SchemaDirectiveVisitor<
         ...prev,
         [key]: value,
       }),
-      {}
+      {},
     );
 
     function visitorSelector(
       type: VisitableSchemaType,
-      methodName: string
+      methodName: string,
     ): Array<SchemaDirectiveVisitor> {
       let directiveNodes = type?.astNode?.directives ?? [];
 
@@ -196,7 +196,7 @@ export class SchemaDirectiveVisitor<
             visitedType: type,
             schema,
             context,
-          })
+          }),
         );
       });
 
@@ -216,7 +216,7 @@ export class SchemaDirectiveVisitor<
 
   protected static getDeclaredDirectives(
     schema: any,
-    directiveVisitors: Record<string, SchemaDirectiveVisitorClass>
+    directiveVisitors: Record<string, SchemaDirectiveVisitorClass>,
   ): Record<string, any> {
     const declaredDirectives: Record<
       string,
@@ -226,7 +226,7 @@ export class SchemaDirectiveVisitor<
         ...prev,
         [curr.name]: curr,
       }),
-      {}
+      {},
     );
     // If the visitor subclass overrides getDirectiveDeclaration, and it
     // returns a non-null GraphQLDirective, use that instead of any directive
@@ -237,12 +237,12 @@ export class SchemaDirectiveVisitor<
       ([directiveName, visitorClass]) => {
         const decl = visitorClass.getDirectiveDeclaration(
           directiveName,
-          schema
+          schema,
         );
         if (decl != null) {
           declaredDirectives[directiveName] = decl;
         }
-      }
+      },
     );
 
     Object.entries(declaredDirectives).forEach(([name, decl]) => {
@@ -266,7 +266,7 @@ export class SchemaDirectiveVisitor<
           // applicable to certain schema locations, and the visitor subclass
           // does not implement all the corresponding methods.
           throw new Error(
-            `SchemaDirectiveVisitor for @${name} must implement ${visitorMethodName} method`
+            `SchemaDirectiveVisitor for @${name} must implement ${visitorMethodName} method`,
           );
         }
       });
@@ -300,7 +300,7 @@ function directiveLocationToVisitorMethodName(loc: any) {
     loc.replace(
       /([^_]*)_?/g,
       (_wholeMatch: any, part: string) =>
-        part.charAt(0).toUpperCase() + part.slice(1).toLowerCase()
+        part.charAt(0).toUpperCase() + part.slice(1).toLowerCase(),
     )
   );
 }

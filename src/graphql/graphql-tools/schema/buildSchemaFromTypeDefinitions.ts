@@ -1,11 +1,11 @@
 import {
-  parse,
-  extendSchema,
   buildASTSchema,
+  extendSchema,
   GraphQLSchema,
+  parse,
 } from "../../deps.ts";
 
-import type { ITypeDefinitions, GraphQLParseOptions } from "../utils/index.ts";
+import type { GraphQLParseOptions, ITypeDefinitions } from "../utils/index.ts";
 
 import {
   extractExtensionDefinitions,
@@ -15,11 +15,11 @@ import { concatenateTypeDefs } from "./concatenateTypeDefs.ts";
 
 export function buildSchemaFromTypeDefinitions(
   typeDefinitions: ITypeDefinitions,
-  parseOptions?: GraphQLParseOptions
+  parseOptions?: GraphQLParseOptions,
 ): any {
   const document = buildDocumentFromTypeDefinitions(
     typeDefinitions,
-    parseOptions
+    parseOptions,
   );
   const typesAst = filterExtensionDefinitions(document);
 
@@ -35,14 +35,14 @@ export function buildSchemaFromTypeDefinitions(
 }
 
 export function isDocumentNode(
-  typeDefinitions: ITypeDefinitions
+  typeDefinitions: ITypeDefinitions,
 ): typeDefinitions is any {
   return (typeDefinitions as any).kind !== undefined;
 }
 
 export function buildDocumentFromTypeDefinitions(
   typeDefinitions: ITypeDefinitions,
-  parseOptions?: GraphQLParseOptions
+  parseOptions?: GraphQLParseOptions,
 ): any {
   let document: any;
   if (typeof typeDefinitions === "string") {
@@ -54,7 +54,7 @@ export function buildDocumentFromTypeDefinitions(
   } else {
     const type = typeof typeDefinitions;
     throw new Error(
-      `typeDefs must be a string, array or schema AST, got ${type}`
+      `typeDefs must be a string, array or schema AST, got ${type}`,
     );
   }
 

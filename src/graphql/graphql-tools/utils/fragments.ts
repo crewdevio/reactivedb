@@ -2,11 +2,14 @@ import { Kind, parse } from "../../deps.ts";
 
 export function concatInlineFragments(type: string, fragments: any): any {
   const fragmentSelections: Array<any> = fragments.reduce(
-    (selections: any, fragment: any) => selections.concat(fragment.selectionSet.selections),
-    []
+    (selections: any, fragment: any) =>
+      selections.concat(fragment.selectionSet.selections),
+    [],
   );
 
-  const deduplicatedFragmentSelection: Array<any> = deduplicateSelection(fragmentSelections);
+  const deduplicatedFragmentSelection: Array<any> = deduplicateSelection(
+    fragmentSelections,
+  );
 
   return {
     kind: Kind.INLINE_FRAGMENT,
@@ -27,7 +30,7 @@ export function concatInlineFragments(type: string, fragments: any): any {
 function deduplicateSelection(nodes: Array<any>): Array<any> {
   const selectionMap = nodes.reduce((map, node) => {
     switch (node.kind) {
-      case 'Field': {
+      case "Field": {
         if (node.alias != null) {
           if (node.alias.value in map) {
             return map;
@@ -48,7 +51,7 @@ function deduplicateSelection(nodes: Array<any>): Array<any> {
           [node.name.value]: node,
         };
       }
-      case 'FragmentSpread': {
+      case "FragmentSpread": {
         if (node.name.value in map) {
           return map;
         }
@@ -58,13 +61,16 @@ function deduplicateSelection(nodes: Array<any>): Array<any> {
           [node.name.value]: node,
         };
       }
-      case 'InlineFragment': {
+      case "InlineFragment": {
         if (map.__fragment != null) {
           const fragment = map.__fragment as any;
 
           return {
             ...map,
-            __fragment: concatInlineFragments((fragment as any).typeCondition.name.value, [fragment, node]),
+            __fragment: concatInlineFragments(
+              (fragment as any).typeCondition.name.value,
+              [fragment, node],
+            ),
           };
         }
 
@@ -81,14 +87,14 @@ function deduplicateSelection(nodes: Array<any>): Array<any> {
 
   const selection = Object.keys(selectionMap).reduce(
     (selectionList, node) => selectionList.concat(selectionMap[node]),
-    []
+    [],
   );
 
   return selection;
 }
 
 export function parseFragmentToInlineFragment(definitions: string): any {
-  if (definitions.trim().startsWith('fragment')) {
+  if (definitions.trim().startsWith("fragment")) {
     const document = (parse as any)(definitions);
     for (const definition of document.definitions) {
       if (definition.kind === Kind.FRAGMENT_DEFINITION) {
@@ -108,5 +114,5 @@ export function parseFragmentToInlineFragment(definitions: string): any {
     }
   }
 
-  throw new Error('Could not parse fragment');
+  throw new Error("Could not parse fragment");
 }

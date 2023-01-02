@@ -1,12 +1,12 @@
 import {
-  valueFromAST,
-  isNonNullType,
   GraphQLError,
+  isNonNullType,
   Kind,
   print,
+  valueFromAST,
 } from "../../deps.ts";
 
-import { inspect } from './inspect.ts';
+import { inspect } from "./inspect.ts";
 
 /**
  * Prepares an object map of argument values given a list of argument
@@ -19,15 +19,16 @@ import { inspect } from './inspect.ts';
 export function getArgumentValues(
   def: any,
   node: any,
-  variableValues: Record<string, any> = {}
+  variableValues: Record<string, any> = {},
 ): Record<string, any> {
-  const variableMap: Record<string, any> = Object.entries(variableValues).reduce(
-    (prev, [key, value]) => ({
-      ...prev,
-      [key]: value,
-    }),
-    {}
-  );
+  const variableMap: Record<string, any> = Object.entries(variableValues)
+    .reduce(
+      (prev, [key, value]) => ({
+        ...prev,
+        [key]: value,
+      }),
+      {},
+    );
 
   const coercedValues: any = {};
 
@@ -38,7 +39,7 @@ export function getArgumentValues(
       ...prev,
       [arg.name.value]: arg,
     }),
-    {}
+    {},
   );
 
   for (const argDef of def.args) {
@@ -51,8 +52,9 @@ export function getArgumentValues(
         coercedValues[name] = argDef.defaultValue;
       } else if (isNonNullType(argType)) {
         throw new (GraphQLError as any)(
-          `Argument "${name}" of required type "${inspect(argType)}" ` + 'was not provided.',
-          node
+          `Argument "${name}" of required type "${inspect(argType)}" ` +
+            "was not provided.",
+          node,
         );
       }
       continue;
@@ -69,8 +71,8 @@ export function getArgumentValues(
         } else if (isNonNullType(argType)) {
           throw new (GraphQLError as any)(
             `Argument "${name}" of required type "${inspect(argType)}" ` +
-            `was provided the variable "$${variableName}" which was not provided a runtime value.`,
-            valueNode
+              `was provided the variable "$${variableName}" which was not provided a runtime value.`,
+            valueNode,
           );
         }
         continue;
@@ -80,8 +82,9 @@ export function getArgumentValues(
 
     if (isNull && isNonNullType(argType)) {
       throw new (GraphQLError as any)(
-        `Argument "${name}" of non-null type "${inspect(argType)}" ` + 'must not be null.',
-        valueNode
+        `Argument "${name}" of non-null type "${inspect(argType)}" ` +
+          "must not be null.",
+        valueNode,
       );
     }
 
@@ -90,7 +93,10 @@ export function getArgumentValues(
       // Note: ValuesOfCorrectTypeRule validation should catch this before
       // execution. This is a runtime check to ensure execution does not
       // continue with an invalid argument value.
-      throw new (GraphQLError as any)(`Argument "${name}" has invalid value ${print(valueNode)}.`, valueNode);
+      throw new (GraphQLError as any)(
+        `Argument "${name}" has invalid value ${print(valueNode)}.`,
+        valueNode,
+      );
     }
     coercedValues[name] = coercedValue;
   }

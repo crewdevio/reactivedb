@@ -4,7 +4,7 @@ import type { ITypedef } from "../utils/index.ts";
 
 export function concatenateTypeDefs(
   typeDefinitionsAry: Array<ITypedef>,
-  calledFunctionRefs = [] as any
+  calledFunctionRefs = [] as any,
 ): string {
   let resolvedTypeDefinitions: Array<string> = [];
   typeDefinitionsAry.forEach((typeDef: ITypedef) => {
@@ -12,7 +12,7 @@ export function concatenateTypeDefs(
       if (calledFunctionRefs.indexOf(typeDef) === -1) {
         calledFunctionRefs.push(typeDef);
         resolvedTypeDefinitions = resolvedTypeDefinitions.concat(
-          concatenateTypeDefs(typeDef(), calledFunctionRefs)
+          concatenateTypeDefs(typeDef(), calledFunctionRefs),
         );
       }
     } else if (typeof typeDef === "string") {
@@ -22,7 +22,7 @@ export function concatenateTypeDefs(
     } else {
       const type = typeof typeDef;
       throw new Error(
-        `typeDef array must contain only strings, documents, or functions, got ${type}`
+        `typeDef array must contain only strings, documents, or functions, got ${type}`,
       );
     }
   });
@@ -35,6 +35,6 @@ function uniq(array: Array<any>): Array<any> {
       accumulator.indexOf(currentValue) === -1
         ? [...accumulator, currentValue]
         : accumulator,
-    []
+    [],
   );
 }
