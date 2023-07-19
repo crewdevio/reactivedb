@@ -1,13 +1,17 @@
 import {
   getNullableType,
+  isInputObjectType,
   isLeafType,
   isListType,
-  isInputObjectType,
 } from "../../deps.ts";
 
 type InputValueTransformer = (type: any, originalValue: any) => any;
 
-export function transformInputValue(type: any, value: any, transformer: InputValueTransformer): any {
+export function transformInputValue(
+  type: any,
+  value: any,
+  transformer: InputValueTransformer,
+): any {
   if (value == null) {
     return value;
   }
@@ -17,12 +21,18 @@ export function transformInputValue(type: any, value: any, transformer: InputVal
   if (isLeafType(nullableType)) {
     return transformer(nullableType, value);
   } else if (isListType(nullableType)) {
-    return value.map((listMember: any) => transformInputValue(nullableType.ofType, listMember, transformer));
+    return value.map((listMember: any) =>
+      transformInputValue(nullableType.ofType, listMember, transformer)
+    );
   } else if (isInputObjectType(nullableType)) {
     const fields = nullableType.getFields();
     const newValue: any = {};
-    Object.keys(value).forEach(key => {
-      newValue[key] = transformInputValue(fields[key].type, value[key], transformer);
+    Object.keys(value).forEach((key) => {
+      newValue[key] = transformInputValue(
+        fields[key].type,
+        value[key],
+        transformer,
+      );
     });
     return newValue;
   }

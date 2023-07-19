@@ -5,63 +5,79 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { cyan, green, red, yellow } from "../../imports/fmt.ts";
 import { handleFiles } from "../core/funtions_runtime.ts";
-import { Bson, StartDataBase } from "../database/mod.ts";
-import { Logs, transform } from "../shared/utils.ts";
+import { Routes, transform } from "../shared/utils.ts";
+import { Router } from "../../imports/server_oak.ts";
 import { createHash } from "../../imports/hash.ts";
 import { AuthToken } from "../middlewares/auth.ts";
 import { exists, walk } from "../../imports/fs.ts";
 import { reactiveEvents } from "../core/events.ts";
-import type { DataBaseProps } from "../types.ts";
 import * as mongo from "../../imports/mongo.ts";
-import { Router } from "../../imports/oak.ts";
 import { generate } from "../libs/uuid/v4.js";
 import { jwt } from "../../imports/jwt.ts";
+import { Bson } from "../database/mod.ts";
 
 export async function CreateRouter(DB: mongo.Database, secret: string) {
   const router = new Router();
 
-  const schema: Array<{ method: string; route: string; handler: string }> = [];
+  const schema: Array<{
+    method: string;
+    route: string;
+    handler: string;
+    extention: string;
+    name: string;
+    path: string;
+  }> = [];
+
+  let count = 0;
 
   if (await exists("./functions")) {
     for await (const file of walk("./functions", {
       exts: ["ts", "js", "tsx", "jsx"],
     })) {
       if (file.isFile && !file.name.startsWith("_")) {
-        const { route, methods, handler } = await handleFiles(file);
+        const {
+          route,
+          methods,
+          handler,
+          extention,
+          name,
+          path,
+          middlewares = [],
+        } = await handleFiles(file, count);
 
         for (const method of methods) {
           schema.push({
             method,
+            extention,
             route,
+            name,
+            path,
             handler: handler.toString(),
           });
 
           // @ts-ignore
           router[method](
             route,
-            // @ts-ignore
+            ...middlewares,
+            //@ts-ignore
             async (ctx) =>
-              // @ts-ignore
+              //@ts-ignore
               await handler(ctx, { Database: DB, Events: reactiveEvents })
           );
         }
+
+        count++;
       }
     }
 
-    router.get("/[v1]/api_schema", ({ response }) => {
+    router.get(Routes.schema, ({ response }) => {
       response.body = schema;
     });
   }
 
-  const routes = {
-    id: "/[v1]/:collection/:id",
-    collection: "/[v1]/:collection",
-  };
-
   // * reactive db core api
-  router.get(routes.id, async ({ response, params }) => {
+  router.get(Routes.id, async ({ response, params }) => {
     try {
       const id = params?.id!;
       const collection = params?.collection!;
@@ -82,7 +98,7 @@ export async function CreateRouter(DB: mongo.Database, secret: string) {
     }
   });
 
-  router.get(routes.collection, async ({ request, response, params }) => {
+  router.get(Routes.collection, async ({ request, response, params }) => {
     try {
       if (decodeURIComponent(request.url.pathname) === "/[v1]/*") {
         const collections = await DB.listCollectionNames();
@@ -109,7 +125,7 @@ export async function CreateRouter(DB: mongo.Database, secret: string) {
     }
   });
 
-  router.post(routes.collection, async ({ response, request, params }) => {
+  router.post(Routes.collection, async ({ response, request, params }) => {
     try {
       const collection = params?.collection!;
       const body = request.body({ type: "json" });
@@ -140,7 +156,7 @@ export async function CreateRouter(DB: mongo.Database, secret: string) {
     }
   });
 
-  router.delete(routes.id, async ({ response, params }) => {
+  router.delete(Routes.id, async ({ response, params }) => {
     try {
       const collection = params?.collection!;
       const id = params?.id!;
@@ -178,7 +194,7 @@ export async function CreateRouter(DB: mongo.Database, secret: string) {
     }
   });
 
-  router.put(routes.id, async ({ response, request, params }) => {
+  router.put(Routes.id, async ({ response, request, params }) => {
     const collection = params?.collection!;
     const id = params?.id!;
 
@@ -217,7 +233,7 @@ export async function CreateRouter(DB: mongo.Database, secret: string) {
     response.body = { ok: true };
   });
 
-  router.patch(routes.id, async ({ response, request, params }) => {
+  router.patch(Routes.id, async ({ response, request, params }) => {
     const collection = params?.collection!;
     const id = params?.id!;
 
@@ -259,7 +275,7 @@ export async function CreateRouter(DB: mongo.Database, secret: string) {
   // * reactive db core api
 
   router.post(
-    "/[auth]/registeUserWithEmailAndPassword",
+    Routes.auth.register,
     // AuthToken,
     async ({ response, request }) => {
       const users = DB.collection("Auth_users");
@@ -302,62 +318,59 @@ export async function CreateRouter(DB: mongo.Database, secret: string) {
     }
   );
 
-  router.post(
-    "/[auth]/loginWithEmailAndPassword",
-    async ({ response, request }) => {
-      try {
-        const users = DB.collection("Auth_users");
+  router.post(Routes.auth.login, async ({ response, request }) => {
+    try {
+      const users = DB.collection("Auth_users");
 
-        const body = request.body({ type: "json" });
-        const { email, password } = await body.value;
+      const body = request.body({ type: "json" });
+      const { email, password } = await body.value;
 
-        const userPassword = createHash("sha1")
-          .update(password.toString())
-          .toString();
+      const userPassword = createHash("sha1")
+        .update(password.toString())
+        .toString();
 
-        const finded = await users.findOne({ email });
+      const finded = await users.findOne({ email });
 
-        if (!finded) {
-          response.status = 409;
-          response.body = { error: true, message: "this account not exist." };
-          return;
-        }
-
-        const {
-          password: findedPassword,
-          email: findedEmail,
-          uuid,
-        } = finded as any;
-
-        if (findedPassword === userPassword) {
-          const Token = await jwt.create(
-            { alg: "HS512", typ: "JWT" },
-            {
-              password: userPassword,
-              email: findedEmail,
-              uuid,
-            },
-            secret
-          );
-
-          response.status = 200;
-          response.body = {
-            uuid,
-            email,
-            token: Token,
-          };
-
-          return;
-        }
-
-        response.body = { error: true, message: "wrong password" };
-      } catch (error) {
-        console.log({ error });
+      if (!finded) {
+        response.status = 409;
+        response.body = { error: true, message: "this account not exist." };
+        return;
       }
-    }
-  );
 
-  router.post("/[auth]/deleteEmailAccount", async ({ request, response }) => {
+      const {
+        password: findedPassword,
+        email: findedEmail,
+        uuid,
+      } = finded as any;
+
+      if (findedPassword === userPassword) {
+        const Token = await jwt.create(
+          { alg: "HS512", typ: "JWT" },
+          {
+            password: userPassword,
+            email: findedEmail,
+            uuid,
+          },
+          secret
+        );
+
+        response.status = 200;
+        response.body = {
+          uuid,
+          email,
+          token: Token,
+        };
+
+        return;
+      }
+
+      response.body = { error: true, message: "wrong password" };
+    } catch (error) {
+      console.log({ error });
+    }
+  });
+
+  router.post(Routes.auth.delete, async ({ request, response }) => {
     const users = DB.collection("Auth_users");
     const body = request.body({ type: "json" });
     const { uuid } = await body.value;
@@ -375,7 +388,7 @@ export async function CreateRouter(DB: mongo.Database, secret: string) {
     }
   });
 
-  router.post("/[auth]/disableEmailAccount", async ({ request, response }) => {
+  router.post(Routes.auth.disable, async ({ request, response }) => {
     const users = DB.collection("Auth_users");
     const body = request.body({ type: "json" });
     const { uuid, active } = await body.value;

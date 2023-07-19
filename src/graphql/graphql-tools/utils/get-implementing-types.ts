@@ -1,6 +1,9 @@
 import { isObjectType } from "../../deps.ts";
 
-export function getImplementingTypes(interfaceName: string, schema: any): string[] {
+export function getImplementingTypes(
+  interfaceName: string,
+  schema: any,
+): string[] {
   const allTypesMap = schema.getTypeMap();
   const result: string[] = [];
 

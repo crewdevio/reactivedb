@@ -1,10 +1,10 @@
 import {
-  Kind,
   getDirectiveValues,
-  GraphQLSkipDirective,
   GraphQLIncludeDirective,
-  typeFromAST,
+  GraphQLSkipDirective,
   isAbstractType,
+  Kind,
+  typeFromAST,
 } from "../../deps.ts";
 
 import type { GraphQLExecutionContext } from "./Interfaces.ts";
@@ -24,7 +24,7 @@ export function collectFields(
   runtimeType: any,
   selectionSet: any,
   fields: Record<string, Array<any>>,
-  visitedFragmentNames: Record<string, boolean>
+  visitedFragmentNames: Record<string, boolean>,
 ): Record<string, Array<any>> {
   for (const selection of selectionSet.selections) {
     switch (selection.kind) {
@@ -51,7 +51,7 @@ export function collectFields(
           runtimeType,
           selection.selectionSet,
           fields,
-          visitedFragmentNames
+          visitedFragmentNames,
         );
         break;
       }
@@ -76,7 +76,7 @@ export function collectFields(
           runtimeType,
           fragment.selectionSet,
           fields,
-          visitedFragmentNames
+          visitedFragmentNames,
         );
         break;
       }
@@ -91,12 +91,12 @@ export function collectFields(
  */
 function shouldIncludeNode(
   exeContext: GraphQLExecutionContext,
-  node: any
+  node: any,
 ): boolean {
   const skip: any = getDirectiveValues(
     GraphQLSkipDirective,
     node,
-    exeContext.variableValues
+    exeContext.variableValues,
   );
 
   if (skip?.if === true) {
@@ -106,7 +106,7 @@ function shouldIncludeNode(
   const include: any = getDirectiveValues(
     GraphQLIncludeDirective,
     node,
-    exeContext.variableValues
+    exeContext.variableValues,
   );
 
   if (include?.if === false) {
@@ -122,7 +122,7 @@ function shouldIncludeNode(
 function doesFragmentConditionMatch(
   exeContext: GraphQLExecutionContext,
   fragment: any,
-  type: any
+  type: any,
 ): boolean {
   const typeConditionNode = fragment.typeCondition;
   if (!typeConditionNode) {

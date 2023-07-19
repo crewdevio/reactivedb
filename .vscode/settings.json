@@ -7,5 +7,5 @@
   "deno.suggest.imports.hosts": {
     "https://deno.land": true
   },
-  "deno.lint": false,
+  "deno.lint": false
 }

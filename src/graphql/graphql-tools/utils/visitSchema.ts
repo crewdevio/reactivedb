@@ -1,23 +1,23 @@
 import {
-  GraphQLSchema,
-  isNamedType,
-  isSchema,
-  isObjectType,
-  isInterfaceType,
-  isInputObjectType,
-  isScalarType,
-  isUnionType,
-  isEnumType,
-  isInputType,
   GraphQLEnumType,
+  GraphQLSchema,
+  isEnumType,
+  isInputObjectType,
+  isInputType,
+  isInterfaceType,
+  isNamedType,
+  isObjectType,
+  isScalarType,
+  isSchema,
+  isUnionType,
 } from "../../deps.ts";
 
 import {
+  NamedTypeVisitor,
+  SchemaVisitorMap,
   VisitableSchemaType,
   VisitorSelector,
   VisitSchemaKind,
-  NamedTypeVisitor,
-  SchemaVisitorMap,
 } from "./Interfaces.ts";
 
 import { healSchema } from "./heal.ts";
@@ -52,12 +52,11 @@ export function visitSchema(
     | VisitorSelector
     | Array<SchemaVisitor | SchemaVisitorMap>
     | SchemaVisitor
-    | SchemaVisitorMap
+    | SchemaVisitorMap,
 ): typeof GraphQLSchema {
-  const visitorSelector =
-    typeof visitorOrVisitorSelector === "function"
-      ? visitorOrVisitorSelector
-      : () => visitorOrVisitorSelector;
+  const visitorSelector = typeof visitorOrVisitorSelector === "function"
+    ? visitorOrVisitorSelector
+    : () => visitorOrVisitorSelector;
 
   // Helper function that calls visitorSelector and applies the resulting
   // visitors to the given type, with arguments [type, ...args].
@@ -85,8 +84,9 @@ export function visitSchema(
       ) {
         const specifiers = getTypeSpecifiers(finalType, schema);
         const typeVisitor = getVisitor(visitorOrVisitorDef, specifiers);
-        newType =
-          typeVisitor != null ? typeVisitor(finalType, schema) : undefined;
+        newType = typeVisitor != null
+          ? typeVisitor(finalType, schema)
+          : undefined;
       }
 
       if (typeof newType === "undefined") {
@@ -96,7 +96,7 @@ export function visitSchema(
 
       if (methodName === "visitSchema" || isSchema(finalType)) {
         throw new Error(
-          `Method ${methodName} cannot replace schema with ${newType as string}`
+          `Method ${methodName} cannot replace schema with ${newType as string}`,
         );
       }
 
@@ -179,7 +179,7 @@ export function visitSchema(
               // Since we call a different method for input object fields, we
               // can't reuse the visitFields function here.
               objectType: newInputObject,
-            }
+            },
           );
           if (!fieldMap[key]) {
             delete fieldMap[key];
@@ -213,7 +213,7 @@ export function visitSchema(
 
         // Recreate the enum type if any of the values changed
         const valuesUpdated = newValues.some(
-          (value, index) => value !== newEnum.getValues()[index]
+          (value, index) => value !== newEnum.getValues()[index],
         );
         if (valuesUpdated) {
           newEnum = new (GraphQLEnumType as any)({
@@ -228,7 +228,7 @@ export function visitSchema(
                   astNode: value.astNode,
                 },
               }),
-              {}
+              {},
             ),
           }) as typeof GraphQLEnumType & T;
         }
@@ -297,7 +297,7 @@ function getTypeSpecifiers(type: any, schema: any): Array<VisitSchemaKind> {
   if (isObjectType(type)) {
     specifiers.push(
       VisitSchemaKind.COMPOSITE_TYPE,
-      VisitSchemaKind.OBJECT_TYPE
+      VisitSchemaKind.OBJECT_TYPE,
     );
     const query = schema.getQueryType();
     const mutation = schema.getMutationType();
@@ -309,7 +309,7 @@ function getTypeSpecifiers(type: any, schema: any): Array<VisitSchemaKind> {
     } else if (type === subscription) {
       specifiers.push(
         VisitSchemaKind.ROOT_OBJECT,
-        VisitSchemaKind.SUBSCRIPTION
+        VisitSchemaKind.SUBSCRIPTION,
       );
     }
   } else if (isInputType(type)) {
@@ -318,13 +318,13 @@ function getTypeSpecifiers(type: any, schema: any): Array<VisitSchemaKind> {
     specifiers.push(
       VisitSchemaKind.COMPOSITE_TYPE,
       VisitSchemaKind.ABSTRACT_TYPE,
-      VisitSchemaKind.INTERFACE_TYPE
+      VisitSchemaKind.INTERFACE_TYPE,
     );
   } else if (isUnionType(type)) {
     specifiers.push(
       VisitSchemaKind.COMPOSITE_TYPE,
       VisitSchemaKind.ABSTRACT_TYPE,
-      VisitSchemaKind.UNION_TYPE
+      VisitSchemaKind.UNION_TYPE,
     );
   } else if (isEnumType(type)) {
     specifiers.push(VisitSchemaKind.ENUM_TYPE);
@@ -337,7 +337,7 @@ function getTypeSpecifiers(type: any, schema: any): Array<VisitSchemaKind> {
 
 function getVisitor(
   visitorDef: SchemaVisitorMap,
-  specifiers: Array<VisitSchemaKind>
+  specifiers: Array<VisitSchemaKind>,
 ): NamedTypeVisitor | null {
   let typeVisitor: NamedTypeVisitor | undefined;
   const stack = [...specifiers];

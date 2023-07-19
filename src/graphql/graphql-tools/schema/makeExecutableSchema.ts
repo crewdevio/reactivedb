@@ -61,7 +61,7 @@ export function makeExecutableSchema<TContext = any>({
     // not doing that now, because I'd have to rewrite a lot of tests.
     schema = addSchemaLevelResolver(
       schema,
-      (resolvers as any)["__schema"] as any
+      (resolvers as any)["__schema"] as any,
     );
   }
 

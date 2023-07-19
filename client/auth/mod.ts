@@ -5,12 +5,14 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import { Routes } from "../../src/shared/utils.ts";
+
 /**
  * authentication module
  */
 export class Auth {
-  public token: { email: string; uuid: string; token: string } | null = null;
   #url: string;
+  public token: { email: string; uuid: string; token: string } | null = null;
   constructor(connection: string) {
     this.#url = connection;
   }
@@ -23,20 +25,22 @@ export class Auth {
    * @returns {Promise<{}>}
    */
   async registeUserWithEmailAndPassword(email: string, password: string) {
-    const response = await fetch(
-      `${this.#url}/[auth]/registeUserWithEmailAndPassword?token=${this.token
-        ?.token}&uuid=${this.token?.uuid}`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email,
-          password,
-        }),
+    const url = new URL(this.#url);
+
+    url.pathname = Routes.auth.register;
+    url.searchParams.set("token", this.token?.token!);
+    url.searchParams.set("uuid", this.token?.uuid!);
+
+    const response = await fetch(url.toString(), {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
       },
-    );
+      body: JSON.stringify({
+        email,
+        password,
+      }),
+    });
 
     const data = await response.json();
 
@@ -55,19 +59,20 @@ export class Auth {
    * @returns {Promise<{ uuid: string; email: string; token: string;}> | undefined}
    */
   async loginWithEmailAndPassword(email: string, password: string) {
-    const response = await fetch(
-      `${this.#url}/[auth]/loginWithEmailAndPassword`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email,
-          password,
-        }),
+    const url = new URL(this.#url);
+
+    url.pathname = Routes.auth.login;
+
+    const response = await fetch(url.toString(), {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
       },
-    );
+      body: JSON.stringify({
+        email,
+        password,
+      }),
+    });
 
     const data = await response.json();
 

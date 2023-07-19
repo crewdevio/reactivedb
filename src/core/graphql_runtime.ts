@@ -1,13 +1,13 @@
 import {
-  join,
-  toFileUrl,
+  basename,
   dirname,
   extname,
-  basename,
+  join,
+  toFileUrl,
 } from "../../imports/path.ts";
+import { Application, Router } from "../../imports/server_oak.ts";
 import { applyGraphQL, gql, GQLError } from "../graphql/mod.ts";
 import { walk } from "../../imports/fs.ts";
-import { Router, Application } from "../../imports/oak.ts";
 
 export async function handleGraphql(dir: string, app: Application) {
   let typeDefs = null;
@@ -17,9 +17,11 @@ export async function handleGraphql(dir: string, app: Application) {
     Query: {},
   };
 
-  for await (const file of walk(dir, {
-    exts: ["ts", "js", "graphql"],
-  })) {
+  for await (
+    const file of walk(dir, {
+      exts: ["ts", "js", "graphql"],
+    })
+  ) {
     if (file.path !== "graphql" && file.name !== "graphql") {
       // parse types
       if (

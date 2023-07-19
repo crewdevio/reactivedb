@@ -6,20 +6,22 @@ import {
   GraphQLObjectType,
   GraphQLScalarType,
   GraphQLUnionType,
-  isObjectType,
-  isInterfaceType,
-  isUnionType,
-  isInputObjectType,
   isEnumType,
+  isInputObjectType,
+  isInterfaceType,
+  isObjectType,
   isScalarType,
-  isSpecifiedScalarType,
   isSpecifiedDirective,
+  isSpecifiedScalarType,
+  isUnionType,
 } from "../../deps.ts";
 
-import { mapSchema } from './mapSchema.ts';
+import { mapSchema } from "./mapSchema.ts";
 
 export function cloneDirective(directive: any): any {
-  return isSpecifiedDirective(directive) ? directive : new (GraphQLDirective as any)(directive.toConfig());
+  return isSpecifiedDirective(directive)
+    ? directive
+    : new (GraphQLDirective as any)(directive.toConfig());
 }
 
 export function cloneType(type: any): any {
@@ -27,13 +29,19 @@ export function cloneType(type: any): any {
     const config = type.toConfig();
     return new (GraphQLObjectType as any)({
       ...config,
-      interfaces: typeof config.interfaces === 'function' ? config.interfaces : config.interfaces.slice(),
+      interfaces: typeof config.interfaces === "function"
+        ? config.interfaces
+        : config.interfaces.slice(),
     });
   } else if (isInterfaceType(type)) {
     const config = type.toConfig() as any;
     const newConfig = {
       ...config,
-      interfaces: [...((typeof config.interfaces === 'function' ? config.interfaces() : config.interfaces) || [])],
+      interfaces: [
+        ...((typeof config.interfaces === "function"
+          ? config.interfaces()
+          : config.interfaces) || []),
+      ],
     };
     return new (GraphQLInterfaceType as any)(newConfig);
   } else if (isUnionType(type)) {
@@ -47,7 +55,9 @@ export function cloneType(type: any): any {
   } else if (isEnumType(type)) {
     return new (GraphQLEnumType as any)(type.toConfig());
   } else if (isScalarType(type)) {
-    return isSpecifiedScalarType(type) ? type : new (GraphQLScalarType as any)(type.toConfig());
+    return isSpecifiedScalarType(type)
+      ? type
+      : new (GraphQLScalarType as any)(type.toConfig());
   }
 
   throw new Error(`Invalid type ${type as string}`);

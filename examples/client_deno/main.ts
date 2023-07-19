@@ -1,6 +1,6 @@
 import { createClient } from "../../client/mod.ts";
 
-const ReactiveDB = createClient("http://localhost:4000");
+const ReactiveDB = createClient("http://localhost:8080");
 
 const client = ReactiveDB();
 

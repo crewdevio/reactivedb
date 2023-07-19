@@ -1,6 +1,6 @@
 import { Kind } from "../../deps.ts";
 
-import { astFromType } from './astFromType.ts';
+import { astFromType } from "./astFromType.ts";
 
 export function updateArgument(
   argName: string,
@@ -8,7 +8,7 @@ export function updateArgument(
   argumentNodes: Record<string, any>,
   variableDefinitionsMap: Record<string, any>,
   variableValues: Record<string, any>,
-  newArg: any
+  newArg: any,
 ): void {
   let varName;
   let numGeneratedVariables = 0;

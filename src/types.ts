@@ -5,10 +5,15 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import type {
+  RouterContext,
+  Middleware as OakMiddleare,
+  State,
+  Context as OakContext,
+} from "../imports/server_oak.ts";
 import type { Database as DB } from "../imports/mongo.ts";
-import type { RouterContext } from "../imports/oak.ts";
 import { MongoClient } from "../imports/mongo.ts";
-import { Packet } from "./websocket/mod.ts";
+import { Packet } from "./server/mod.ts";
 
 export type ReactiveEvents =
   | "child_removed"
@@ -40,7 +45,7 @@ export interface IPacket extends Packet {
 }
 
 export interface Actions {
-  id: number;
+  id: string;
   actions: Array<{
     action: ReactiveEvents;
     data: any;
@@ -61,7 +66,7 @@ export interface DataBaseProps {
   credential: {
     username?: string;
     password?: string;
-  }
+  };
 }
 
 export interface ApiCoreProps {
@@ -70,7 +75,15 @@ export interface ApiCoreProps {
   connection: string | DataBaseProps;
 }
 
-export interface Context extends RouterContext {}
+export type Context = RouterContext<string>;
+
+export type Middleare<
+  S extends State = Record<string, any>,
+  T extends OakContext<State, Record<string, any>> = OakContext<
+    S,
+    Record<string, any>
+  >
+> = OakMiddleare<S, T>;
 
 export type HandlerFunction = (context: Context) => void | Promise<void>;
 
@@ -106,3 +119,8 @@ export interface EventSender<T extends any = any> {
   data: T;
   event: "child_removed" | "child_changed" | "child_added";
 }
+
+export type SFunction = (
+  context: Context,
+  utils: Utilities
+) => Promise<void> | void;

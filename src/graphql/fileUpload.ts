@@ -38,7 +38,7 @@ export const fileUploadMiddleware = async (ctx: any, next: any) => {
     const formBoundary = match.groups!.boundary;
     const mr = new MultipartReader(
       ctx.request.serverRequest.body,
-      formBoundary
+      formBoundary,
     );
     try {
       let entries = [];
@@ -50,7 +50,7 @@ export const fileUploadMiddleware = async (ctx: any, next: any) => {
       }
 
       const operationsEntry = entries.find(
-        (entry) => entry[0] === "operations"
+        (entry) => entry[0] === "operations",
       );
       if (!operationsEntry || typeof operationsEntry[1] !== "string") {
         throw new Error("operations not provided or invalid");
@@ -63,7 +63,7 @@ export const fileUploadMiddleware = async (ctx: any, next: any) => {
       }
       const map = JSON.parse(mapEntry[1]);
 
-      entries.forEach(entry => {
+      entries.forEach((entry) => {
         const [key, value] = entry;
         if (key !== "operations" && key !== "map" && map[key]) {
           const paths = map[key] as string[];

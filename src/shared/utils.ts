@@ -107,3 +107,17 @@ export function filterData(path: string) {
     return detectType(path);
   }
 }
+
+export const Routes = {
+  id: "/[v1]/:collection/:id",
+  collection: "/[v1]/:collection",
+  schema: "/[v1]/api_schema",
+  auth: {
+    register: "/[auth]/registeUserWithEmailAndPassword",
+    login: "/[auth]/loginWithEmailAndPassword",
+    delete: "/[auth]/deleteEmailAccount",
+    disable: "/[auth]/disableEmailAccount",
+  },
+};
+
+export const IS_DENO_DEPLOY = Deno.env.get("DENO_DEPLOYMENT_ID") !== undefined;

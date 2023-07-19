@@ -1,4 +1,3 @@
-
 export function inputFieldToFieldConfig(field: any): any {
   return {
     description: field.description,
@@ -24,7 +23,7 @@ export function fieldToFieldConfig(field: any): any {
 
 export function argsToFieldConfigArgumentMap(args: ReadonlyArray<any>): any {
   const newArguments: any = {};
-  args.forEach(arg => {
+  args.forEach((arg) => {
     newArguments[arg.name] = argumentToArgumentConfig(arg);
   });
 

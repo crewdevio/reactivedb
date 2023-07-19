@@ -14,7 +14,7 @@ import type { DataBaseProps } from "../types.ts";
  * @param {string | DataBaseProps} connection connection config
  */
 export async function StartDataBase(
-  connection: string | DataBaseProps = "mongodb://127.0.0.1:27017/Default"
+  connection: string | DataBaseProps = "mongodb://127.0.0.1:27017/Default",
 ) {
   try {
     const client = new MongoClient();

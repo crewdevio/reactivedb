@@ -1,47 +1,61 @@
 import {
+  GraphQLEnumType,
+  GraphQLInputObjectType,
+  GraphQLInterfaceType,
+  GraphQLList,
+  GraphQLNonNull,
   GraphQLObjectType,
   GraphQLSchema,
-  isInterfaceType,
   isEnumType,
+  isInputObjectType,
+  isInterfaceType,
+  isLeafType,
+  isListType,
+  isNamedType,
+  isNonNullType,
   isObjectType,
   isScalarType,
   isUnionType,
-  isInputObjectType,
-  GraphQLInputObjectType,
-  GraphQLInterfaceType,
-  isLeafType,
-  isListType,
-  isNonNullType,
-  isNamedType,
-  GraphQLList,
-  GraphQLNonNull,
-  GraphQLEnumType,
 } from "../../deps.ts";
 
 import {
-  SchemaMapper,
-  MapperKind,
-  TypeMap,
-  NamedTypeMapper,
+  ArgumentMapper,
   DirectiveMapper,
+  EnumValueMapper,
   GenericFieldMapper,
   IDefaultValueIteratorFn,
-  ArgumentMapper,
-  EnumValueMapper,
-} from './Interfaces.ts';
+  MapperKind,
+  NamedTypeMapper,
+  SchemaMapper,
+  TypeMap,
+} from "./Interfaces.ts";
 
-import { rewireTypes } from './rewire.ts';
-import { serializeInputValue, parseInputValue } from './transformInputValue.ts';
+import { rewireTypes } from "./rewire.ts";
+import { parseInputValue, serializeInputValue } from "./transformInputValue.ts";
 
 export function mapSchema(schema: any, schemaMapper: SchemaMapper = {}): any {
   const originalTypeMap = schema.getTypeMap();
 
-  let newTypeMap = mapDefaultValues(originalTypeMap, schema, serializeInputValue);
-  newTypeMap = mapTypes(newTypeMap, schema, schemaMapper, type => isLeafType(type));
+  let newTypeMap = mapDefaultValues(
+    originalTypeMap,
+    schema,
+    serializeInputValue,
+  );
+  newTypeMap = mapTypes(
+    newTypeMap,
+    schema,
+    schemaMapper,
+    (type) => isLeafType(type),
+  );
   newTypeMap = mapEnumValues(newTypeMap, schema, schemaMapper);
   newTypeMap = mapDefaultValues(newTypeMap, schema, parseInputValue);
 
-  newTypeMap = mapTypes(newTypeMap, schema, schemaMapper, type => !isLeafType(type));
+  newTypeMap = mapTypes(
+    newTypeMap,
+    schema,
+    schemaMapper,
+    (type) => !isLeafType(type),
+  );
   newTypeMap = mapFields(newTypeMap, schema, schemaMapper);
   newTypeMap = mapArguments(newTypeMap, schema, schemaMapper);
 
@@ -52,29 +66,34 @@ export function mapSchema(schema: any, schemaMapper: SchemaMapper = {}): any {
   const mutationType = schema.getMutationType();
   const subscriptionType = schema.getSubscriptionType();
 
-  const newQueryTypeName =
-    queryType != null ? (newTypeMap[queryType.name] != null ? newTypeMap[queryType.name].name : undefined) : undefined;
-  const newMutationTypeName =
-    mutationType != null
-      ? newTypeMap[mutationType.name] != null
-        ? newTypeMap[mutationType.name].name
-        : undefined
-      : undefined;
-  const newSubscriptionTypeName =
-    subscriptionType != null
-      ? newTypeMap[subscriptionType.name] != null
-        ? newTypeMap[subscriptionType.name].name
-        : undefined
-      : undefined;
+  const newQueryTypeName = queryType != null
+    ? (newTypeMap[queryType.name] != null
+      ? newTypeMap[queryType.name].name
+      : undefined)
+    : undefined;
+  const newMutationTypeName = mutationType != null
+    ? newTypeMap[mutationType.name] != null
+      ? newTypeMap[mutationType.name].name
+      : undefined
+    : undefined;
+  const newSubscriptionTypeName = subscriptionType != null
+    ? newTypeMap[subscriptionType.name] != null
+      ? newTypeMap[subscriptionType.name].name
+      : undefined
+    : undefined;
 
   const { typeMap, directives } = rewireTypes(newTypeMap, newDirectives);
 
   return new (GraphQLSchema as any)({
     ...schema.toConfig(),
     query: newQueryTypeName ? (typeMap[newQueryTypeName] as any) : undefined,
-    mutation: newMutationTypeName ? (typeMap[newMutationTypeName] as any) : undefined,
-    subscription: newSubscriptionTypeName != null ? (typeMap[newSubscriptionTypeName] as any) : undefined,
-    types: Object.keys(typeMap).map(typeName => typeMap[typeName]),
+    mutation: newMutationTypeName
+      ? (typeMap[newMutationTypeName] as any)
+      : undefined,
+    subscription: newSubscriptionTypeName != null
+      ? (typeMap[newSubscriptionTypeName] as any)
+      : undefined,
+    types: Object.keys(typeMap).map((typeName) => typeMap[typeName]),
     directives,
   });
 }
@@ -83,12 +102,12 @@ function mapTypes(
   originalTypeMap: TypeMap,
   schema: any,
   schemaMapper: SchemaMapper,
-  testFn: (originalType: any) => boolean = () => true
+  testFn: (originalType: any) => boolean = () => true,
 ): TypeMap {
   const newTypeMap: any = {};
 
-  Object.keys(originalTypeMap).forEach(typeName => {
-    if (!typeName.startsWith('__')) {
+  Object.keys(originalTypeMap).forEach((typeName) => {
+    if (!typeName.startsWith("__")) {
       const originalType = originalTypeMap[typeName];
 
       if (originalType == null || !testFn(originalType)) {
@@ -117,7 +136,11 @@ function mapTypes(
   return newTypeMap;
 }
 
-function mapEnumValues(originalTypeMap: TypeMap, schema: any, schemaMapper: SchemaMapper): TypeMap {
+function mapEnumValues(
+  originalTypeMap: TypeMap,
+  schema: any,
+  schemaMapper: SchemaMapper,
+): TypeMap {
   const enumValueMapper = getEnumValueMapper(schemaMapper);
   if (!enumValueMapper) {
     return originalTypeMap;
@@ -131,9 +154,14 @@ function mapEnumValues(originalTypeMap: TypeMap, schema: any, schemaMapper: Sche
         const config = type.toConfig();
         const originalEnumValueConfigMap = config.values;
         const newEnumValueConfigMap: any = {};
-        Object.keys(originalEnumValueConfigMap).forEach(enumValueName => {
-          const originalEnumValueConfig = originalEnumValueConfigMap[enumValueName];
-          const mappedEnumValue = enumValueMapper(originalEnumValueConfig, type.name, schema);
+        Object.keys(originalEnumValueConfigMap).forEach((enumValueName) => {
+          const originalEnumValueConfig =
+            originalEnumValueConfigMap[enumValueName];
+          const mappedEnumValue = enumValueMapper(
+            originalEnumValueConfig,
+            type.name,
+            schema,
+          );
           if (mappedEnumValue === undefined) {
             newEnumValueConfigMap[enumValueName] = originalEnumValueConfig;
           } else if (Array.isArray(mappedEnumValue)) {
@@ -149,13 +177,17 @@ function mapEnumValues(originalTypeMap: TypeMap, schema: any, schemaMapper: Sche
         });
       },
     },
-    type => isEnumType(type)
+    (type) => isEnumType(type),
   );
 }
 
-function mapDefaultValues(originalTypeMap: TypeMap, schema: any, fn: IDefaultValueIteratorFn): TypeMap {
+function mapDefaultValues(
+  originalTypeMap: TypeMap,
+  schema: any,
+  fn: IDefaultValueIteratorFn,
+): TypeMap {
   const newTypeMap = mapArguments(originalTypeMap, schema, {
-    [MapperKind.ARGUMENT]: argumentConfig => {
+    [MapperKind.ARGUMENT]: (argumentConfig) => {
       if (argumentConfig.defaultValue === undefined) {
         return argumentConfig;
       }
@@ -171,7 +203,7 @@ function mapDefaultValues(originalTypeMap: TypeMap, schema: any, fn: IDefaultVal
   });
 
   return mapFields(newTypeMap, schema, {
-    [MapperKind.INPUT_OBJECT_FIELD]: inputFieldConfig => {
+    [MapperKind.INPUT_OBJECT_FIELD]: (inputFieldConfig) => {
       if (inputFieldConfig.defaultValue === undefined) {
         return inputFieldConfig;
       }
@@ -202,14 +234,21 @@ function getNewType<T extends any>(newTypeMap: TypeMap, type: T): T | null {
   return null;
 }
 
-function mapFields(originalTypeMap: TypeMap, schema: any, schemaMapper: SchemaMapper): TypeMap {
+function mapFields(
+  originalTypeMap: TypeMap,
+  schema: any,
+  schemaMapper: SchemaMapper,
+): TypeMap {
   const newTypeMap: any = {};
 
-  Object.keys(originalTypeMap).forEach(typeName => {
-    if (!typeName.startsWith('__')) {
+  Object.keys(originalTypeMap).forEach((typeName) => {
+    if (!typeName.startsWith("__")) {
       const originalType = originalTypeMap[typeName];
 
-      if (!isObjectType(originalType) && !isInterfaceType(originalType) && !isInputObjectType(originalType)) {
+      if (
+        !isObjectType(originalType) && !isInterfaceType(originalType) &&
+        !isInputObjectType(originalType)
+      ) {
         newTypeMap[typeName] = originalType;
         return;
       }
@@ -224,9 +263,14 @@ function mapFields(originalTypeMap: TypeMap, schema: any, schemaMapper: SchemaMa
 
       const originalFieldConfigMap = config.fields;
       const newFieldConfigMap: any = {};
-      Object.keys(originalFieldConfigMap).forEach(fieldName => {
+      Object.keys(originalFieldConfigMap).forEach((fieldName) => {
         const originalFieldConfig = originalFieldConfigMap[fieldName];
-        const mappedField = fieldMapper(originalFieldConfig, fieldName, typeName, schema);
+        const mappedField = fieldMapper(
+          originalFieldConfig,
+          fieldName,
+          typeName,
+          schema,
+        );
         if (mappedField === undefined) {
           newFieldConfigMap[fieldName] = originalFieldConfig;
         } else if (Array.isArray(mappedField)) {
@@ -259,11 +303,15 @@ function mapFields(originalTypeMap: TypeMap, schema: any, schemaMapper: SchemaMa
   return newTypeMap;
 }
 
-function mapArguments(originalTypeMap: TypeMap, schema: any, schemaMapper: SchemaMapper): TypeMap {
+function mapArguments(
+  originalTypeMap: TypeMap,
+  schema: any,
+  schemaMapper: SchemaMapper,
+): TypeMap {
   const newTypeMap: any = {};
 
-  Object.keys(originalTypeMap).forEach(typeName => {
-    if (!typeName.startsWith('__')) {
+  Object.keys(originalTypeMap).forEach((typeName) => {
+    if (!typeName.startsWith("__")) {
       const originalType = originalTypeMap[typeName];
 
       if (!isObjectType(originalType) && !isInterfaceType(originalType)) {
@@ -281,7 +329,7 @@ function mapArguments(originalTypeMap: TypeMap, schema: any, schemaMapper: Schem
 
       const originalFieldConfigMap = config.fields;
       const newFieldConfigMap: any = {};
-      Object.keys(originalFieldConfigMap).forEach(fieldName => {
+      Object.keys(originalFieldConfigMap).forEach((fieldName) => {
         const originalFieldConfig = originalFieldConfigMap[fieldName];
         const originalArgumentConfigMap = originalFieldConfig.args;
 
@@ -299,10 +347,16 @@ function mapArguments(originalTypeMap: TypeMap, schema: any, schemaMapper: Schem
 
         const newArgumentConfigMap: any = {};
 
-        argumentNames.forEach(argumentName => {
-          const originalArgumentConfig = originalArgumentConfigMap[argumentName];
+        argumentNames.forEach((argumentName) => {
+          const originalArgumentConfig =
+            originalArgumentConfigMap[argumentName];
 
-          const mappedArgument = argumentMapper(originalArgumentConfig, fieldName, typeName, schema);
+          const mappedArgument = argumentMapper(
+            originalArgumentConfig,
+            fieldName,
+            typeName,
+            schema,
+          );
 
           if (mappedArgument === undefined) {
             newArgumentConfigMap[argumentName] = originalArgumentConfig;
@@ -344,7 +398,7 @@ function mapArguments(originalTypeMap: TypeMap, schema: any, schemaMapper: Schem
 function mapDirectives(
   originalDirectives: ReadonlyArray<any>,
   schema: any,
-  schemaMapper: SchemaMapper
+  schemaMapper: SchemaMapper,
 ): Array<any> {
   const directiveMapper = getDirectiveMapper(schemaMapper);
   if (directiveMapper == null) {
@@ -353,7 +407,7 @@ function mapDirectives(
 
   const newDirectives: Array<any> = [];
 
-  originalDirectives.forEach(directive => {
+  originalDirectives.forEach((directive) => {
     const mappedDirective = directiveMapper(directive, schema);
     if (mappedDirective === undefined) {
       newDirectives.push(directive);
@@ -384,9 +438,17 @@ function getTypeSpecifiers(schema: any, typeName: string): Array<MapperKind> {
   } else if (isInputObjectType(type)) {
     specifiers.push(MapperKind.INPUT_OBJECT_TYPE);
   } else if (isInterfaceType(type)) {
-    specifiers.push(MapperKind.COMPOSITE_TYPE, MapperKind.ABSTRACT_TYPE, MapperKind.INTERFACE_TYPE);
+    specifiers.push(
+      MapperKind.COMPOSITE_TYPE,
+      MapperKind.ABSTRACT_TYPE,
+      MapperKind.INTERFACE_TYPE,
+    );
   } else if (isUnionType(type)) {
-    specifiers.push(MapperKind.COMPOSITE_TYPE, MapperKind.ABSTRACT_TYPE, MapperKind.UNION_TYPE);
+    specifiers.push(
+      MapperKind.COMPOSITE_TYPE,
+      MapperKind.ABSTRACT_TYPE,
+      MapperKind.UNION_TYPE,
+    );
   } else if (isEnumType(type)) {
     specifiers.push(MapperKind.ENUM_TYPE);
   } else if (isScalarType(type)) {
@@ -396,7 +458,11 @@ function getTypeSpecifiers(schema: any, typeName: string): Array<MapperKind> {
   return specifiers;
 }
 
-function getTypeMapper(schema: any, schemaMapper: SchemaMapper, typeName: string): NamedTypeMapper | null {
+function getTypeMapper(
+  schema: any,
+  schemaMapper: SchemaMapper,
+  typeName: string,
+): NamedTypeMapper | null {
   const specifiers = getTypeSpecifiers(schema, typeName);
   let typeMapper: NamedTypeMapper | undefined;
   const stack = [...specifiers];
@@ -422,7 +488,10 @@ function getFieldSpecifiers(schema: any, typeName: string): Array<MapperKind> {
     } else if (mutation != null && typeName === mutation.name) {
       specifiers.push(MapperKind.ROOT_FIELD, MapperKind.MUTATION_ROOT_FIELD);
     } else if (subscription != null && typeName === subscription.name) {
-      specifiers.push(MapperKind.ROOT_FIELD, MapperKind.SUBSCRIPTION_ROOT_FIELD);
+      specifiers.push(
+        MapperKind.ROOT_FIELD,
+        MapperKind.SUBSCRIPTION_ROOT_FIELD,
+      );
     }
   } else if (isInterfaceType(type)) {
     specifiers.push(MapperKind.COMPOSITE_FIELD, MapperKind.INTERFACE_FIELD);
@@ -436,7 +505,7 @@ function getFieldSpecifiers(schema: any, typeName: string): Array<MapperKind> {
 function getFieldMapper<F extends any | any>(
   schema: any,
   schemaMapper: SchemaMapper,
-  typeName: string
+  typeName: string,
 ): GenericFieldMapper<F> | null {
   const specifiers = getFieldSpecifiers(schema, typeName);
   let fieldMapper: GenericFieldMapper<F> | undefined;
@@ -454,12 +523,16 @@ function getArgumentMapper(schemaMapper: SchemaMapper): ArgumentMapper | null {
   return argumentMapper != null ? argumentMapper : null;
 }
 
-function getDirectiveMapper(schemaMapper: SchemaMapper): DirectiveMapper | null {
+function getDirectiveMapper(
+  schemaMapper: SchemaMapper,
+): DirectiveMapper | null {
   const directiveMapper = schemaMapper[MapperKind.DIRECTIVE];
   return directiveMapper != null ? directiveMapper : null;
 }
 
-function getEnumValueMapper(schemaMapper: SchemaMapper): EnumValueMapper | null {
+function getEnumValueMapper(
+  schemaMapper: SchemaMapper,
+): EnumValueMapper | null {
   const enumValueMapper = schemaMapper[MapperKind.ENUM_VALUE];
   return enumValueMapper != null ? enumValueMapper : null;
 }

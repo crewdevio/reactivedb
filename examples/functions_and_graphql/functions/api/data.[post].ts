@@ -1,4 +1,4 @@
-import type { Context, Utilities } from "../../../../src/types.ts";
+import type { Context, Utilities } from "../../../../mod.ts";
 
 export default async function Users(context: Context, utils: Utilities) {
   const body = context.request.body({ type: "json" });

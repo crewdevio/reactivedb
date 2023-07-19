@@ -1,4 +1,4 @@
-import { WebSocket } from "../deps.ts";
+// import { WebSocket } from "../deps.ts";
 import { Packet } from "./packet.ts";
 
 /**
@@ -32,7 +32,7 @@ export class Channel {
    *       incomingSocketConnection
    *     })
    */
-  public listeners: Map<number, WebSocket>;
+  public listeners: Map<string, globalThis.WebSocket>;
 
   //////////////////////////////////////////////////////////////////////////////
   // FILE MARKER - CONSTRUCTOR /////////////////////////////////////////////////

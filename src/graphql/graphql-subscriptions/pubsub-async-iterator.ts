@@ -47,8 +47,9 @@ export class PubSubAsyncIterator<T> implements AsyncIterator<T> {
     this.pushQueue = [];
     this.running = true;
     this.allSubscribed = null;
-    this.eventsArray =
-      typeof eventNames === "string" ? [eventNames] : eventNames;
+    this.eventsArray = typeof eventNames === "string"
+      ? [eventNames]
+      : eventNames;
   }
 
   public async next(): Promise<IteratorResult<T>> {
@@ -78,7 +79,7 @@ export class PubSubAsyncIterator<T> implements AsyncIterator<T> {
       (this.pullQueue as any).shift()(
         this.running
           ? { value: event, done: false }
-          : { value: undefined, done: true }
+          : { value: undefined, done: true },
       );
     } else {
       this.pushQueue.push(event);
@@ -91,7 +92,7 @@ export class PubSubAsyncIterator<T> implements AsyncIterator<T> {
         resolve(
           this.running
             ? ({ value: this.pushQueue.shift(), done: false } as any)
-            : { value: undefined, done: true }
+            : { value: undefined, done: true },
         );
       } else {
         this.pullQueue.push(resolve);
@@ -118,7 +119,7 @@ export class PubSubAsyncIterator<T> implements AsyncIterator<T> {
     return Promise.all(
       this.eventsArray.map((eventName) =>
         this.pubsub.subscribe(eventName, this.pushValue.bind(this), {})
-      )
+      ),
     );
   }
 

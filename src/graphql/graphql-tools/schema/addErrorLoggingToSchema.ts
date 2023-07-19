@@ -1,4 +1,4 @@
-import { mapSchema, MapperKind } from "../utils/index.ts";
+import { MapperKind, mapSchema } from "../utils/index.ts";
 import { decorateWithLogger } from "./decorateWithLogger.ts";
 import type { ILogger } from "./types.ts";
 
@@ -15,7 +15,7 @@ export function addErrorLoggingToSchema(schema: any, logger?: ILogger): any {
       resolve: decorateWithLogger(
         fieldConfig.resolve,
         logger,
-        `${typeName}.${fieldName}`
+        `${typeName}.${fieldName}`,
       ),
     }),
   });

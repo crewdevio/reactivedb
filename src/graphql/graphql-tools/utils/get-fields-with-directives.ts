@@ -7,7 +7,8 @@ export type TypeAndFieldToDirectives = {
 };
 
 function isObjectTypeDefinitionOrExtension(obj: any): obj is any | any {
-  return obj && (obj.kind === 'ObjectTypeDefinition' || obj.kind === 'ObjectTypeExtension');
+  return obj &&
+    (obj.kind === "ObjectTypeDefinition" || obj.kind === "ObjectTypeExtension");
 }
 
 function parseDirectiveValue(value: any): any {
@@ -24,7 +25,13 @@ function parseDirectiveValue(value: any): any {
     case Kind.LIST:
       return value.values.map((v: any) => parseDirectiveValue(v));
     case Kind.OBJECT:
-      return value.fields.reduce((prev: any, v: any) => ({ ...prev, [v.name.value]: parseDirectiveValue(v.value) }), {});
+      return value.fields.reduce(
+        (prev: any, v: any) => ({
+          ...prev,
+          [v.name.value]: parseDirectiveValue(v.value),
+        }),
+        {},
+      );
     case Kind.NULL:
       return null;
     default:
@@ -32,10 +39,12 @@ function parseDirectiveValue(value: any): any {
   }
 }
 
-export function getFieldsWithDirectives(documentNode: any): TypeAndFieldToDirectives {
+export function getFieldsWithDirectives(
+  documentNode: any,
+): TypeAndFieldToDirectives {
   const result: TypeAndFieldToDirectives = {};
   const allTypes = documentNode.definitions.filter(
-    isObjectTypeDefinitionOrExtension
+    isObjectTypeDefinitionOrExtension,
   );
 
   for (const type of allTypes) {
@@ -48,8 +57,11 @@ export function getFieldsWithDirectives(documentNode: any): TypeAndFieldToDirect
         const directives: DirectiveUsage[] = field.directives.map((d: any) => ({
           name: d.name.value,
           args: (d.arguments || []).reduce(
-            (prev: any, arg: any) => ({ ...prev, [arg.name.value]: parseDirectiveValue(arg.value) }),
-            {}
+            (prev: any, arg: any) => ({
+              ...prev,
+              [arg.name.value]: parseDirectiveValue(arg.value),
+            }),
+            {},
           ),
         }));
 

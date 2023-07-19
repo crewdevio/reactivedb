@@ -1,18 +1,22 @@
-import * as WebSocket from 'https://cdn.pika.dev/ws@^7.3.0';
+import * as WebSocket from "https://cdn.pika.dev/ws@^7.3.0";
 
-import MessageTypes from './message-types.ts';
-import isObject from './utils/is-object.ts';
+import MessageTypes from "./message-types.ts";
+import isObject from "./utils/is-object.ts";
 import {
+  GraphQLSchema,
   parse,
+  specifiedRules,
   validate,
   ValidationContext,
-  specifiedRules,
-  GraphQLSchema
-} from '../deps.ts';
-import { createEmptyIterable } from './utils/empty-iterable.ts';
-import { createAsyncIterator, forAwaitEach, isAsyncIterable } from 'https://cdn.pika.dev/iterall@^1.3.0';
-import { isASubscriptionOperation } from './utils/is-subscriptions.ts';
-import { parseLegacyProtocolMessage } from './legacy/parse-legacy-protocol.ts';
+} from "../deps.ts";
+import { createEmptyIterable } from "./utils/empty-iterable.ts";
+import {
+  createAsyncIterator,
+  forAwaitEach,
+  isAsyncIterable,
+} from "https://cdn.pika.dev/iterall@^1.3.0";
+import { isASubscriptionOperation } from "./utils/is-subscriptions.ts";
+import { parseLegacyProtocolMessage } from "./legacy/parse-legacy-protocol.ts";
 
 export type ExecutionIterator = AsyncIterator<any>;
 
@@ -28,13 +32,13 @@ export interface ExecutionParams<TContext = any> {
 }
 
 export type ConnectionContext = {
-  initPromise?: Promise<any>,
-  isLegacy: boolean,
-  socket: any,
-  request: any,
+  initPromise?: Promise<any>;
+  isLegacy: boolean;
+  socket: any;
+  request: any;
   operations: {
-    [opId: string]: ExecutionIterator,
-  },
+    [opId: string]: ExecutionIterator;
+  };
 };
 
 export interface OperationMessagePayload {
@@ -50,30 +54,33 @@ export interface OperationMessage {
   type: string;
 }
 
-export type ExecuteFunction = (schema: any,
-  document: any,
-  rootValue?: any,
-  contextValue?: any,
-  variableValues?: { [key: string]: any },
-  operationName?: string,
-  fieldResolver?: any) => any
-
-export type SubscribeFunction = (schema: any,
+export type ExecuteFunction = (
+  schema: any,
   document: any,
   rootValue?: any,
   contextValue?: any,
   variableValues?: { [key: string]: any },
   operationName?: string,
   fieldResolver?: any,
-  subscribeFieldResolver?: any) => any
+) => any;
+
+export type SubscribeFunction = (
+  schema: any,
+  document: any,
+  rootValue?: any,
+  contextValue?: any,
+  variableValues?: { [key: string]: any },
+  operationName?: string,
+  fieldResolver?: any,
+  subscribeFieldResolver?: any,
+) => any;
 
 export interface ServerOptions {
   rootValue?: any;
   schema?: any;
   execute?: ExecuteFunction;
   subscribe?: SubscribeFunction;
-  validationRules?:
-  Array<(context: any) => any> | ReadonlyArray<any>;
+  validationRules?: Array<(context: any) => any> | ReadonlyArray<any>;
   onOperation?: Function;
   onOperationComplete?: Function;
   onConnect?: Function;
@@ -97,8 +104,8 @@ export class SubscriptionServer {
   private keepAlive?: number;
   private closeHandler: () => void;
   private specifiedRules:
-    Array<(context: any) => any> |
-    ReadonlyArray<any>;
+    | Array<(context: any) => any>
+    | ReadonlyArray<any>;
 
   public static create(options: ServerOptions) {
     return new SubscriptionServer(options);
@@ -106,7 +113,11 @@ export class SubscriptionServer {
 
   constructor(options: ServerOptions) {
     const {
-      onOperation, onOperationComplete, onConnect, onDisconnect, keepAlive,
+      onOperation,
+      onOperationComplete,
+      onConnect,
+      onDisconnect,
+      keepAlive,
     } = options;
 
     this.specifiedRules = options.validationRules || specifiedRules;
@@ -146,7 +157,7 @@ export class SubscriptionServer {
         if (error) {
           this.sendError(
             connectionContext,
-            '',
+            "",
             { message: error.message ? error.message : error },
             MessageTypes.GQL_CONNECTION_ERROR,
           );
@@ -163,14 +174,14 @@ export class SubscriptionServer {
         }
       };
 
-      socket.on('error', connectionClosedHandler);
-      socket.on('close', connectionClosedHandler);
-      socket.on('message', this.onMessage(connectionContext));
+      socket.on("error", connectionClosedHandler);
+      socket.on("close", connectionClosedHandler);
+      socket.on("message", this.onMessage(connectionContext));
     });
 
-    this.wsServer.on('connection', connectionHandler);
+    this.wsServer.on("connection", connectionHandler);
     this.closeHandler = () => {
-      this.wsServer.removeListener('connection', connectionHandler);
+      this.wsServer.removeListener("connection", connectionHandler);
       this.wsServer.close();
     };
   }
@@ -187,7 +198,9 @@ export class SubscriptionServer {
     const { execute, subscribe, schema, rootValue } = options;
 
     if (!execute) {
-      throw new Error('Must provide `execute` for websocket server constructor.');
+      throw new Error(
+        "Must provide `execute` for websocket server constructor.",
+      );
     }
 
     this.schema = schema;
@@ -220,9 +233,17 @@ export class SubscriptionServer {
     return (message: any) => {
       let parsedMessage: any;
       try {
-        parsedMessage = parseLegacyProtocolMessage(connectionContext, JSON.parse(message));
+        parsedMessage = parseLegacyProtocolMessage(
+          connectionContext,
+          JSON.parse(message),
+        );
       } catch (e) {
-        (this.sendError as any)(connectionContext, null, { message: e.message }, MessageTypes.GQL_CONNECTION_ERROR);
+        (this.sendError as any)(
+          connectionContext,
+          null,
+          { message: e.message },
+          MessageTypes.GQL_CONNECTION_ERROR,
+        );
         return;
       }
 
@@ -234,7 +255,13 @@ export class SubscriptionServer {
               try {
                 // TODO - this should become a function call with just 2 arguments in the future
                 // when we release the breaking change api: parsedMessage.payload and connectionContext
-                resolve((this.onConnect as any)(parsedMessage.payload, connectionContext.socket, connectionContext));
+                resolve(
+                  (this.onConnect as any)(
+                    parsedMessage.payload,
+                    connectionContext.socket,
+                    connectionContext,
+                  ),
+                );
               } catch (e) {
                 reject(e);
               }
@@ -243,7 +270,7 @@ export class SubscriptionServer {
 
           (connectionContext.initPromise as any).then((result: any) => {
             if (result === false) {
-              throw new Error('Prohibited connection!');
+              throw new Error("Prohibited connection!");
             }
 
             (this.sendError as any)(
@@ -290,7 +317,9 @@ export class SubscriptionServer {
         case MessageTypes.GQL_START:
           (connectionContext.initPromise as any).then((initResult: any) => {
             // if we already have a subscription with this id, unsubscribe from it first
-            if (connectionContext.operations && connectionContext.operations[opId]) {
+            if (
+              connectionContext.operations && connectionContext.operations[opId]
+            ) {
               this.unsubscribe(connectionContext, opId);
             }
 
@@ -298,10 +327,15 @@ export class SubscriptionServer {
               query: parsedMessage.payload.query,
               variables: parsedMessage.payload.variables,
               operationName: parsedMessage.payload.operationName,
-              context: isObject(initResult) ? Object.assign(Object.create(Object.getPrototypeOf(initResult)), initResult) : {},
-              formatResponse: <any>undefined,
-              formatError: <any>undefined,
-              callback: <any>undefined,
+              context: isObject(initResult)
+                ? Object.assign(
+                  Object.create(Object.getPrototypeOf(initResult)),
+                  initResult,
+                )
+                : {},
+              formatResponse: <any> undefined,
+              formatError: <any> undefined,
+              callback: <any> undefined,
               schema: this.schema,
             };
             let promisedParams = Promise.resolve(baseParams);
@@ -311,47 +345,71 @@ export class SubscriptionServer {
 
             if (this.onOperation) {
               let messageForCallback: any = parsedMessage;
-              promisedParams = Promise.resolve(this.onOperation(messageForCallback, baseParams, connectionContext.socket));
+              promisedParams = Promise.resolve(
+                this.onOperation(
+                  messageForCallback,
+                  baseParams,
+                  connectionContext.socket,
+                ),
+              );
             }
 
             promisedParams.then((params) => {
-              if (typeof params !== 'object') {
-                const error = `Invalid params returned from onOperation! return values must be an object!`;
+              if (typeof params !== "object") {
+                const error =
+                  `Invalid params returned from onOperation! return values must be an object!`;
                 this.sendError(connectionContext, opId, { message: error });
 
                 throw new Error(error);
               }
 
               if (!params.schema) {
-                const error = 'Missing schema information. The GraphQL schema should be provided either statically in' +
-                  ' the `SubscriptionServer` constructor or as a property on the object returned from onOperation!';
+                const error =
+                  "Missing schema information. The GraphQL schema should be provided either statically in" +
+                  " the `SubscriptionServer` constructor or as a property on the object returned from onOperation!";
                 this.sendError(connectionContext, opId, { message: error });
 
                 throw new Error(error);
               }
 
-              const document = typeof baseParams.query !== 'string' ? baseParams.query : (parse as any)(baseParams.query);
+              const document = typeof baseParams.query !== "string"
+                ? baseParams.query
+                : (parse as any)(baseParams.query);
               let executionPromise: Promise<AsyncIterator<any> | any>;
-              const validationErrors = (validate as any)(params.schema, document, this.specifiedRules);
+              const validationErrors = (validate as any)(
+                params.schema,
+                document,
+                this.specifiedRules,
+              );
 
               if (validationErrors.length > 0) {
-                executionPromise = Promise.resolve({ errors: validationErrors });
+                executionPromise = Promise.resolve({
+                  errors: validationErrors,
+                });
               } else {
                 let executor: any = this.execute;
-                if (this.subscribe && isASubscriptionOperation(document, params.operationName)) {
+                if (
+                  this.subscribe &&
+                  isASubscriptionOperation(document, params.operationName)
+                ) {
                   executor = this.subscribe;
                 }
-                executionPromise = Promise.resolve(executor(params.schema,
-                  document,
-                  this.rootValue,
-                  params.context,
-                  params.variables,
-                  params.operationName));
+                executionPromise = Promise.resolve(
+                  executor(
+                    params.schema,
+                    document,
+                    this.rootValue,
+                    params.context,
+                    params.variables,
+                    params.operationName,
+                  ),
+                );
               }
 
               return executionPromise.then((executionResult) => ({
-                executionIterable: isAsyncIterable(executionResult) ?
-                  executionResult : createAsyncIterator([executionResult]),
+                executionIterable: isAsyncIterable(executionResult)
+                  ? executionResult
+                  : createAsyncIterator([executionResult]),
                 params,
               }));
             }).then(({ executionIterable, params }) => {
@@ -364,14 +422,25 @@ export class SubscriptionServer {
                     try {
                       result = params.formatResponse(value, params);
                     } catch (err) {
-                      console.error('Error in formatError function:', err);
+                      console.error("Error in formatError function:", err);
                     }
                   }
 
-                  this.sendMessage(connectionContext, opId, MessageTypes.GQL_DATA, result);
-                })
+                  this.sendMessage(
+                    connectionContext,
+                    opId,
+                    MessageTypes.GQL_DATA,
+                    result,
+                  );
+                },
+              )
                 .then(() => {
-                  this.sendMessage(connectionContext, opId, MessageTypes.GQL_COMPLETE, null);
+                  this.sendMessage(
+                    connectionContext,
+                    opId,
+                    MessageTypes.GQL_COMPLETE,
+                    null,
+                  );
                 })
                 .catch((e: Error) => {
                   let error = e;
@@ -380,7 +449,7 @@ export class SubscriptionServer {
                     try {
                       error = params.formatError(e, params);
                     } catch (err) {
-                      console.error('Error in formatError function: ', err);
+                      console.error("Error in formatError function: ", err);
                     }
                   }
 
@@ -398,10 +467,20 @@ export class SubscriptionServer {
             }).then(() => {
               // NOTE: This is a temporary code to support the legacy protocol.
               // As soon as the old protocol has been removed, this coode should also be removed.
-              this.sendMessage(connectionContext, opId, MessageTypes.SUBSCRIPTION_SUCCESS, undefined);
+              this.sendMessage(
+                connectionContext,
+                opId,
+                MessageTypes.SUBSCRIPTION_SUCCESS,
+                undefined,
+              );
             }).catch((e: any) => {
               if (e.errors) {
-                this.sendMessage(connectionContext, opId, MessageTypes.GQL_DATA, { errors: e.errors });
+                this.sendMessage(
+                  connectionContext,
+                  opId,
+                  MessageTypes.GQL_DATA,
+                  { errors: e.errors },
+                );
               } else {
                 this.sendError(connectionContext, opId, { message: e.message });
               }
@@ -424,40 +503,68 @@ export class SubscriptionServer {
           break;
 
         default:
-          this.sendError(connectionContext, opId, { message: 'Invalid message type!' });
+          this.sendError(connectionContext, opId, {
+            message: "Invalid message type!",
+          });
       }
     };
   }
 
   private sendKeepAlive(connectionContext: ConnectionContext): void {
     if (connectionContext.isLegacy) {
-      (this.sendMessage as any)(connectionContext, undefined, MessageTypes.KEEP_ALIVE, undefined);
+      (this.sendMessage as any)(
+        connectionContext,
+        undefined,
+        MessageTypes.KEEP_ALIVE,
+        undefined,
+      );
     } else {
-      (this.sendMessage as any)(connectionContext, undefined, MessageTypes.GQL_CONNECTION_KEEP_ALIVE, undefined);
+      (this.sendMessage as any)(
+        connectionContext,
+        undefined,
+        MessageTypes.GQL_CONNECTION_KEEP_ALIVE,
+        undefined,
+      );
     }
   }
 
-  private sendMessage(connectionContext: ConnectionContext, opId: string, type: string, payload: any): void {
+  private sendMessage(
+    connectionContext: ConnectionContext,
+    opId: string,
+    type: string,
+    payload: any,
+  ): void {
     const parsedMessage = parseLegacyProtocolMessage(connectionContext, {
       type,
       id: opId,
       payload,
     });
 
-    if (parsedMessage && connectionContext.socket.readyState === WebSocket.OPEN) {
+    if (
+      parsedMessage && connectionContext.socket.readyState === WebSocket.OPEN
+    ) {
       connectionContext.socket.send(JSON.stringify(parsedMessage));
     }
   }
 
-  private sendError(connectionContext: ConnectionContext, opId: string, errorPayload: any,
-    overrideDefaultErrorType?: string): void {
-    const sanitizedOverrideDefaultErrorType = overrideDefaultErrorType || MessageTypes.GQL_ERROR;
-    if ([
-      MessageTypes.GQL_CONNECTION_ERROR,
-      MessageTypes.GQL_ERROR,
-    ].indexOf(sanitizedOverrideDefaultErrorType) === -1) {
-      throw new Error('overrideDefaultErrorType should be one of the allowed error messages' +
-        ' GQL_CONNECTION_ERROR or GQL_ERROR');
+  private sendError(
+    connectionContext: ConnectionContext,
+    opId: string,
+    errorPayload: any,
+    overrideDefaultErrorType?: string,
+  ): void {
+    const sanitizedOverrideDefaultErrorType = overrideDefaultErrorType ||
+      MessageTypes.GQL_ERROR;
+    if (
+      [
+        MessageTypes.GQL_CONNECTION_ERROR,
+        MessageTypes.GQL_ERROR,
+      ].indexOf(sanitizedOverrideDefaultErrorType) === -1
+    ) {
+      throw new Error(
+        "overrideDefaultErrorType should be one of the allowed error messages" +
+          " GQL_CONNECTION_ERROR or GQL_ERROR",
+      );
     }
 
     this.sendMessage(

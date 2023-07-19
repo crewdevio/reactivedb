@@ -26,7 +26,7 @@
     />
 
     <script type="module">
-      import { createClient } from "./client/browser.esm.js";
+      import { createClient } from "http://127.0.0.1:5500/client/browser.esm.js";
 
       const reactive = createClient("http://localhost:4000");
       const users = reactive();
@@ -41,10 +41,10 @@
 
       users.onClose(() => {
         console.log("closed");
-      });
+      }).add({ from: "disconned", ok: true })
 
       document.querySelector("#btn").addEventListener("click", () => {
-        users.add({ name: "Math.random()", id: "Math.random()" });
+        users.add({ name: "erick", id: "sosa" });
       });
 
       // document.querySelector("#update").addEventListener("click", () => {
@@ -54,7 +54,7 @@
       // });
 
       document.querySelector("#btns").addEventListener("click", () => {
-        users.remove("63a49be648a9f5313f09a546");
+        users.remove("63b05d560a00316db1839844");
       });
 
     </script>

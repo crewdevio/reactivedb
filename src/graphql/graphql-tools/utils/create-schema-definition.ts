@@ -1,4 +1,3 @@
-
 export function createSchemaDefinition(
   def: {
     query: string | any | null | undefined;
@@ -25,9 +24,11 @@ export function createSchemaDefinition(
 
   const fields = Object.keys(schemaRoot)
     .map(
-      (rootType) => (schemaRoot[rootType]
+      (
+        rootType,
+      ) => (schemaRoot[rootType]
         ? `${rootType}: ${schemaRoot[rootType]}`
-        : null)
+        : null),
     )
     .filter((a) => a);
 

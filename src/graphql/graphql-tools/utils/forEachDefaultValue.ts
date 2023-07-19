@@ -1,10 +1,10 @@
-import { getNamedType, isObjectType, isInputObjectType } from "../../deps.ts";
+import { getNamedType, isInputObjectType, isObjectType } from "../../deps.ts";
 
 import type { IDefaultValueIteratorFn } from "./Interfaces.ts";
 
 export function forEachDefaultValue(
   schema: any,
-  fn: IDefaultValueIteratorFn
+  fn: IDefaultValueIteratorFn,
 ): void {
   const typeMap = schema.getTypeMap();
   Object.keys(typeMap).forEach((typeName) => {

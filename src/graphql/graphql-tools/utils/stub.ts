@@ -1,31 +1,31 @@
 import {
-  GraphQLObjectType,
-  GraphQLInterfaceType,
-  GraphQLInputObjectType,
-  GraphQLString,
-  GraphQLInt,
-  GraphQLFloat,
   GraphQLBoolean,
+  GraphQLFloat,
   GraphQLID,
-  isObjectType,
-  isInterfaceType,
-  isInputObjectType,
-  Kind,
+  GraphQLInputObjectType,
+  GraphQLInt,
+  GraphQLInterfaceType,
   GraphQLList,
   GraphQLNonNull,
+  GraphQLObjectType,
+  GraphQLString,
+  isInputObjectType,
+  isInterfaceType,
+  isObjectType,
+  Kind,
 } from "../../deps.ts";
 
-export function createNamedStub(name: string, type: 'object'): any;
-export function createNamedStub(name: string, type: 'interface'): any;
-export function createNamedStub(name: string, type: 'input'): any;
+export function createNamedStub(name: string, type: "object"): any;
+export function createNamedStub(name: string, type: "interface"): any;
+export function createNamedStub(name: string, type: "input"): any;
 export function createNamedStub(
   name: string,
-  type: any
+  type: any,
 ): any {
   let constructor: any;
-  if (type === 'object') {
+  if (type === "object") {
     constructor = GraphQLObjectType;
-  } else if (type === 'interface') {
+  } else if (type === "interface") {
     constructor = GraphQLInterfaceType;
   } else {
     constructor = GraphQLInputObjectType;
@@ -41,9 +41,9 @@ export function createNamedStub(
   });
 }
 
-export function createStub(node: any, type: 'output'): any;
-export function createStub(node: any, type: 'input'): any;
-export function createStub(node: any, type: 'output' | 'input'): any;
+export function createStub(node: any, type: "output"): any;
+export function createStub(node: any, type: "input"): any;
+export function createStub(node: any, type: "output" | "input"): any;
 export function createStub(node: any, type: any): any {
   switch (node.kind) {
     case Kind.LIST_TYPE:
@@ -51,10 +51,10 @@ export function createStub(node: any, type: any): any {
     case Kind.NON_NULL_TYPE:
       return new (GraphQLNonNull as any)(createStub(node.type, type));
     default:
-      if (type === 'output') {
-        return createNamedStub(node.name.value, 'object');
+      if (type === "output") {
+        return createNamedStub(node.name.value, "object");
       }
-      return createNamedStub(node.name.value, 'input');
+      return createNamedStub(node.name.value, "input");
   }
 }
 
@@ -62,7 +62,7 @@ export function isNamedStub(type: any): boolean {
   if (isObjectType(type) || isInterfaceType(type) || isInputObjectType(type)) {
     const fields = type.getFields();
     const fieldNames = Object.keys(fields);
-    return fieldNames.length === 1 && fields[fieldNames[0]].name === '__fake';
+    return fieldNames.length === 1 && fields[fieldNames[0]].name === "__fake";
   }
 
   return false;

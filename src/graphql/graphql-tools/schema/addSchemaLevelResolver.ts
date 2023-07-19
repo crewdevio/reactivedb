@@ -1,5 +1,5 @@
 import { defaultFieldResolver } from "../../deps.ts";
-import { mapSchema, MapperKind } from '../utils/index.ts';
+import { MapperKind, mapSchema } from "../utils/index.ts";
 
 // wraps all resolvers of query, mutation or subscription fields
 // with the provided function to simulate a root schema level resolver
@@ -31,10 +31,10 @@ export function addSchemaLevelResolver(schema: any, fn: any): any {
 // XXX badly named function. this doesn't really wrap, it just chains resolvers...
 function wrapResolver(
   innerResolver: any | undefined,
-  outerResolver: any
+  outerResolver: any,
 ): any {
   return (obj: any, args: any, ctx: any, info: any) =>
-    resolveMaybePromise(outerResolver(obj, args, ctx, info), root => {
+    resolveMaybePromise(outerResolver(obj, args, ctx, info), (root) => {
       if (innerResolver != null) {
         return innerResolver(root, args, ctx, info);
       }
@@ -42,15 +42,21 @@ function wrapResolver(
     });
 }
 
-function isPromise<T>(maybePromise: Promise<T> | T): maybePromise is Promise<T> {
-  return maybePromise && typeof (maybePromise as Promise<T>).then === 'function';
+function isPromise<T>(
+  maybePromise: Promise<T> | T,
+): maybePromise is Promise<T> {
+  return maybePromise &&
+    typeof (maybePromise as Promise<T>).then === "function";
 }
 
 // resolvers can be synchronous or asynchronous. if all resolvers
 // in an operation return synchronously, the execution should return
 // synchronously. the maybe-sync/maybe-async nature of resolvers should be
 // preserved
-function resolveMaybePromise<T, U>(maybePromise: Promise<T> | T, fulfillmentCallback: (value: T) => U): Promise<U> | U {
+function resolveMaybePromise<T, U>(
+  maybePromise: Promise<T> | T,
+  fulfillmentCallback: (value: T) => U,
+): Promise<U> | U {
   if (isPromise(maybePromise)) {
     return maybePromise.then(fulfillmentCallback);
   }
@@ -67,11 +73,11 @@ function runAtMostOncePerRequest(fn: any): any {
   let value: any;
   const randomNumber = Math.random();
   return (root: any, args: any, ctx: any, info: any) => {
-    if (!info.operation['__runAtMostOnce']) {
-      info.operation['__runAtMostOnce'] = {};
+    if (!info.operation["__runAtMostOnce"]) {
+      info.operation["__runAtMostOnce"] = {};
     }
-    if (!info.operation['__runAtMostOnce'][randomNumber]) {
-      info.operation['__runAtMostOnce'][randomNumber] = true;
+    if (!info.operation["__runAtMostOnce"][randomNumber]) {
+      info.operation["__runAtMostOnce"][randomNumber] = true;
       value = fn(root, args, ctx, info);
     }
     return value;

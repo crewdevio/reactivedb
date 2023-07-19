@@ -50,7 +50,7 @@ function processFragments(ast: any) {
               fragmentName +
               " already exists.\n" +
               "graphql-tag enforces all fragment names across your application to be unique; read more about\n" +
-              "this in the docs: http://dev.apollodata.com/core/fragments.html#unique-names"
+              "this in the docs: http://dev.apollodata.com/core/fragments.html#unique-names",
           );
         }
 

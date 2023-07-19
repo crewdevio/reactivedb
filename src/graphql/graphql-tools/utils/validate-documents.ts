@@ -1,4 +1,4 @@
-import { Kind, validate, specifiedRules } from "../../deps.ts";
+import { Kind, specifiedRules, validate } from "../../deps.ts";
 import type { Source } from "./loaders.ts";
 import { CombinedError } from "./errors.ts";
 
@@ -13,7 +13,7 @@ export interface LoadDocumentError {
 export async function validateGraphQlDocuments(
   schema: any,
   documentFiles: Source[],
-  effectiveRules: ValidationRule[] = DEFAULT_EFFECTIVE_RULES
+  effectiveRules: ValidationRule[] = DEFAULT_EFFECTIVE_RULES,
 ): Promise<ReadonlyArray<LoadDocumentError>> {
   const allFragments: any[] = [];
 
@@ -41,7 +41,7 @@ export async function validateGraphQlDocuments(
             const firstIndex = list.findIndex(
               (def) =>
                 def.kind === Kind.FRAGMENT_DEFINITION &&
-                def.name.value === definition.name.value
+                def.name.value === definition.name.value,
             );
             const isDuplicated = firstIndex !== index;
 
@@ -57,7 +57,7 @@ export async function validateGraphQlDocuments(
       const errors = (validate as any)(
         schema,
         documentToValidate,
-        effectiveRules
+        effectiveRules,
       );
 
       if (errors.length > 0) {
@@ -66,14 +66,14 @@ export async function validateGraphQlDocuments(
           errors,
         });
       }
-    })
+    }),
   );
 
   return allErrors;
 }
 
 export function checkValidationErrors(
-  loadDocumentErrors: ReadonlyArray<LoadDocumentError>
+  loadDocumentErrors: ReadonlyArray<LoadDocumentError>,
 ): void | never {
   if (loadDocumentErrors.length > 0) {
     const errors: Error[] = [];
@@ -85,8 +85,10 @@ export function checkValidationErrors(
         error.message = `${error.name}: ${graphQLError.message}`;
         error.stack = error.message;
         (graphQLError as any).locations.forEach(
-          (location: any) =>
-            (error.stack += `\n    at ${loadDocumentError.filePath}:${location.line}:${location.column}`)
+          (
+            location: any,
+          ) => (error.stack +=
+            `\n    at ${loadDocumentError.filePath}:${location.line}:${location.column}`),
         );
 
         errors.push(error);
@@ -111,6 +113,6 @@ function createDefaultRules() {
   });
 
   return specifiedRules.filter(
-    (f: (...args: any[]) => any) => !ignored.includes(f.name)
+    (f: (...args: any[]) => any) => !ignored.includes(f.name),
   );
 }

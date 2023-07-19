@@ -1,45 +1,45 @@
 import {
   GraphQLEnumType,
-  isSchema,
-  GraphQLScalarType,
-  GraphQLUnionType,
   GraphQLInterfaceType,
   GraphQLObjectType,
-  isSpecifiedScalarType,
-  isScalarType,
+  GraphQLScalarType,
+  GraphQLUnionType,
   isEnumType,
-  isUnionType,
   isInterfaceType,
   isObjectType,
+  isScalarType,
+  isSchema,
+  isSpecifiedScalarType,
+  isUnionType,
 } from "../../deps.ts";
 
 import {
+  forEachDefaultValue,
+  forEachField,
+  healSchema,
+  IAddResolversToSchemaOptions,
   IResolvers,
   IResolverValidationOptions,
-  IAddResolversToSchemaOptions,
-  mapSchema,
   MapperKind,
-  forEachDefaultValue,
-  serializeInputValue,
-  healSchema,
+  mapSchema,
   parseInputValue,
-  forEachField,
-} from '../utils/index.ts';
+  serializeInputValue,
+} from "../utils/index.ts";
 
-import { checkForResolveTypeResolver } from './checkForResolveTypeResolver.ts';
-import { extendResolversFromInterfaces } from './extendResolversFromInterfaces.ts';
+import { checkForResolveTypeResolver } from "./checkForResolveTypeResolver.ts";
+import { extendResolversFromInterfaces } from "./extendResolversFromInterfaces.ts";
 
 export function addResolversToSchema(
   schemaOrOptions: any | IAddResolversToSchemaOptions,
   legacyInputResolvers?: IResolvers,
-  legacyInputValidationOptions?: IResolverValidationOptions
+  legacyInputValidationOptions?: IResolverValidationOptions,
 ): any {
   const options: any = isSchema(schemaOrOptions)
     ? {
-        schema: schemaOrOptions,
-        resolvers: legacyInputResolvers,
-        resolverValidationOptions: legacyInputValidationOptions,
-      }
+      schema: schemaOrOptions,
+      resolvers: legacyInputResolvers,
+      resolverValidationOptions: legacyInputValidationOptions,
+    }
     : schemaOrOptions;
 
   let {
@@ -51,30 +51,27 @@ export function addResolversToSchema(
     updateResolversInPlace = false,
   } = options;
 
-  const { allowResolversNotInSchema = false, requireResolversForResolveType } = resolverValidationOptions;
+  const { allowResolversNotInSchema = false, requireResolversForResolveType } =
+    resolverValidationOptions;
 
   const resolvers = inheritResolversFromInterfaces
     ? extendResolversFromInterfaces(schema, inputResolvers)
     : inputResolvers;
 
-  Object.keys(resolvers).forEach(typeName => {
+  Object.keys(resolvers).forEach((typeName) => {
     const resolverValue = resolvers[typeName];
     const resolverType = typeof resolverValue;
 
-    if (typeName === '__schema') {
-      if (resolverType !== 'function') {
+    if (typeName === "__schema") {
+      if (resolverType !== "function") {
         throw new Error(
-          `"${typeName}" defined in resolvers, but has invalid value "${
-            (resolverValue as unknown) as string
-          }". A schema resolver's value must be of type object or function.`
+          `"${typeName}" defined in resolvers, but has invalid value "${(resolverValue as unknown) as string}". A schema resolver's value must be of type object or function.`,
         );
       }
     } else {
-      if (resolverType !== 'object') {
+      if (resolverType !== "object") {
         throw new Error(
-          `"${typeName}" defined in resolvers, but has invalid value "${
-            (resolverValue as unknown) as string
-          }". The resolver's value must be of type object.`
+          `"${typeName}" defined in resolvers, but has invalid value "${(resolverValue as unknown) as string}". The resolver's value must be of type object.`,
         );
       }
 
@@ -85,11 +82,13 @@ export function addResolversToSchema(
           return;
         }
 
-        throw new Error(`"${typeName}" defined in resolvers, but not in schema`);
+        throw new Error(
+          `"${typeName}" defined in resolvers, but not in schema`,
+        );
       } else if (isSpecifiedScalarType(type)) {
         // allow -- without recommending -- overriding of specified scalar types
-        Object.keys(resolverValue).forEach(fieldName => {
-          if (fieldName.startsWith('__')) {
+        Object.keys(resolverValue).forEach((fieldName) => {
+          if (fieldName.startsWith("__")) {
             type[fieldName.substring(2)] = resolverValue[fieldName];
           } else {
             type[fieldName] = resolverValue[fieldName];
@@ -101,17 +100,17 @@ export function addResolversToSchema(
 
   schema = updateResolversInPlace
     ? addResolversToExistingSchema({
-        schema,
-        resolvers,
-        defaultFieldResolver,
-        allowResolversNotInSchema,
-      })
+      schema,
+      resolvers,
+      defaultFieldResolver,
+      allowResolversNotInSchema,
+    })
     : createNewSchemaWithResolvers({
-        schema,
-        resolvers,
-        defaultFieldResolver,
-        allowResolversNotInSchema,
-      });
+      schema,
+      resolvers,
+      defaultFieldResolver,
+      allowResolversNotInSchema,
+    });
 
   checkForResolveTypeResolver(schema, requireResolversForResolveType);
 
@@ -130,14 +129,14 @@ function addResolversToExistingSchema({
   allowResolversNotInSchema: boolean;
 }): any {
   const typeMap = schema.getTypeMap();
-  Object.keys(resolvers).forEach(typeName => {
-    if (typeName !== '__schema') {
+  Object.keys(resolvers).forEach((typeName) => {
+    if (typeName !== "__schema") {
       const type = schema.getType(typeName);
       const resolverValue: any = resolvers[typeName];
 
       if (isScalarType(type)) {
-        Object.keys(resolverValue).forEach(fieldName => {
-          if (fieldName.startsWith('__')) {
+        Object.keys(resolverValue).forEach((fieldName) => {
+          if (fieldName.startsWith("__")) {
             (type as any)[fieldName.substring(2)] = resolverValue[fieldName];
           } else {
             (type as any)[fieldName] = resolverValue[fieldName];
@@ -147,14 +146,16 @@ function addResolversToExistingSchema({
         const config: any = type.toConfig();
         const enumValueConfigMap = config.values;
 
-        Object.keys(resolverValue).forEach(fieldName => {
-          if (fieldName.startsWith('__')) {
+        Object.keys(resolverValue).forEach((fieldName) => {
+          if (fieldName.startsWith("__")) {
             config[fieldName.substring(2)] = resolverValue[fieldName];
           } else if (!enumValueConfigMap[fieldName]) {
             if (allowResolversNotInSchema) {
               return;
             }
-            throw new Error(`${type.name}.${fieldName} was defined in resolvers, but not present within ${type.name}`);
+            throw new Error(
+              `${type.name}.${fieldName} was defined in resolvers, but not present within ${type.name}`,
+            );
           } else {
             enumValueConfigMap[fieldName].value = resolverValue[fieldName];
           }
@@ -162,8 +163,8 @@ function addResolversToExistingSchema({
 
         typeMap[typeName] = new (GraphQLEnumType as any)(config);
       } else if (isUnionType(type)) {
-        Object.keys(resolverValue).forEach(fieldName => {
-          if (fieldName.startsWith('__')) {
+        Object.keys(resolverValue).forEach((fieldName) => {
+          if (fieldName.startsWith("__")) {
             (type as any)[fieldName.substring(2)] = resolverValue[fieldName];
             return;
           }
@@ -172,12 +173,12 @@ function addResolversToExistingSchema({
           }
 
           throw new Error(
-            `${type.name}.${fieldName} was defined in resolvers, but ${type.name} is not an object or interface type`
+            `${type.name}.${fieldName} was defined in resolvers, but ${type.name} is not an object or interface type`,
           );
         });
       } else if (isObjectType(type) || isInterfaceType(type)) {
-        Object.keys(resolverValue).forEach(fieldName => {
-          if (fieldName.startsWith('__')) {
+        Object.keys(resolverValue).forEach((fieldName) => {
+          if (fieldName.startsWith("__")) {
             // this is for isTypeOf and resolveType and all the other stuff.
             (type as any)[fieldName.substring(2)] = resolverValue[fieldName];
             return;
@@ -191,16 +192,20 @@ function addResolversToExistingSchema({
               return;
             }
 
-            throw new Error(`${typeName}.${fieldName} defined in resolvers, but not in schema`);
+            throw new Error(
+              `${typeName}.${fieldName} defined in resolvers, but not in schema`,
+            );
           }
 
           const fieldResolve = resolverValue[fieldName];
-          if (typeof fieldResolve === 'function') {
+          if (typeof fieldResolve === "function") {
             // for convenience. Allows shorter syntax in resolver definition file
             field.resolve = fieldResolve;
           } else {
-            if (typeof fieldResolve !== 'object') {
-              throw new Error(`Resolver ${typeName}.${fieldName} must be object or function`);
+            if (typeof fieldResolve !== "object") {
+              throw new Error(
+                `Resolver ${typeName}.${fieldName} must be object or function`,
+              );
             }
             setFieldProperties(field, fieldResolve);
           }
@@ -217,7 +222,7 @@ function addResolversToExistingSchema({
   forEachDefaultValue(schema, parseInputValue);
 
   if (defaultFieldResolver != null) {
-    forEachField(schema, field => {
+    forEachField(schema, (field) => {
       if (!field.resolve) {
         field.resolve = defaultFieldResolver;
       }
@@ -243,8 +248,8 @@ function createNewSchemaWithResolvers({
       const config: any = type.toConfig();
       const resolverValue: any = resolvers[type.name];
       if (!isSpecifiedScalarType(type) && resolverValue != null) {
-        Object.keys(resolverValue).forEach(fieldName => {
-          if (fieldName.startsWith('__')) {
+        Object.keys(resolverValue).forEach((fieldName) => {
+          if (fieldName.startsWith("__")) {
             config[fieldName.substring(2)] = resolverValue[fieldName];
           } else {
             config[fieldName] = resolverValue[fieldName];
@@ -261,14 +266,16 @@ function createNewSchemaWithResolvers({
       const enumValueConfigMap = config.values;
 
       if (resolverValue != null) {
-        Object.keys(resolverValue).forEach(fieldName => {
-          if (fieldName.startsWith('__')) {
+        Object.keys(resolverValue).forEach((fieldName) => {
+          if (fieldName.startsWith("__")) {
             config[fieldName.substring(2)] = resolverValue[fieldName];
           } else if (!enumValueConfigMap[fieldName]) {
             if (allowResolversNotInSchema) {
               return;
             }
-            throw new Error(`${type.name}.${fieldName} was defined in resolvers, but not present within ${type.name}`);
+            throw new Error(
+              `${type.name}.${fieldName} was defined in resolvers, but not present within ${type.name}`,
+            );
           } else {
             enumValueConfigMap[fieldName].value = resolverValue[fieldName];
           }
@@ -282,8 +289,8 @@ function createNewSchemaWithResolvers({
 
       if (resolverValue != null) {
         const config: any = type.toConfig();
-        Object.keys(resolverValue).forEach(fieldName => {
-          if (fieldName.startsWith('__')) {
+        Object.keys(resolverValue).forEach((fieldName) => {
+          if (fieldName.startsWith("__")) {
             // this is for isTypeOf and resolveType and all the other stuff.
             config[fieldName.substring(2)] = resolverValue[fieldName];
             return;
@@ -293,7 +300,7 @@ function createNewSchemaWithResolvers({
           }
 
           throw new Error(
-            `${type.name}.${fieldName} was defined in resolvers, but ${type.name} is not an object or interface type`
+            `${type.name}.${fieldName} was defined in resolvers, but ${type.name} is not an object or interface type`,
           );
         });
 
@@ -306,8 +313,8 @@ function createNewSchemaWithResolvers({
         const config: any = type.toConfig();
         const fields = config.fields;
 
-        Object.keys(resolverValue).forEach(fieldName => {
-          if (fieldName.startsWith('__')) {
+        Object.keys(resolverValue).forEach((fieldName) => {
+          if (fieldName.startsWith("__")) {
             config[fieldName.substring(2)] = resolverValue[fieldName];
             return;
           }
@@ -319,7 +326,9 @@ function createNewSchemaWithResolvers({
               return;
             }
 
-            throw new Error(`${type.name}.${fieldName} defined in resolvers, but not in schema`);
+            throw new Error(
+              `${type.name}.${fieldName} defined in resolvers, but not in schema`,
+            );
           }
         });
 
@@ -332,8 +341,8 @@ function createNewSchemaWithResolvers({
         const config: any = type.toConfig();
         const fields = config.fields;
 
-        Object.keys(resolverValue).forEach(fieldName => {
-          if (fieldName.startsWith('__')) {
+        Object.keys(resolverValue).forEach((fieldName) => {
+          if (fieldName.startsWith("__")) {
             config[fieldName.substring(2)] = resolverValue[fieldName];
             return;
           }
@@ -345,7 +354,9 @@ function createNewSchemaWithResolvers({
               return;
             }
 
-            throw new Error(`${type.name}.${fieldName} defined in resolvers, but not in schema`);
+            throw new Error(
+              `${type.name}.${fieldName} defined in resolvers, but not in schema`,
+            );
           }
         });
 
@@ -359,12 +370,14 @@ function createNewSchemaWithResolvers({
         const fieldResolve = resolverValue[fieldName];
         if (fieldResolve != null) {
           const newFieldConfig = { ...fieldConfig };
-          if (typeof fieldResolve === 'function') {
+          if (typeof fieldResolve === "function") {
             // for convenience. Allows shorter syntax in resolver definition file
             newFieldConfig.resolve = fieldResolve;
           } else {
-            if (typeof fieldResolve !== 'object') {
-              throw new Error(`Resolver ${typeName}.${fieldName} must be object or function`);
+            if (typeof fieldResolve !== "object") {
+              throw new Error(
+                `Resolver ${typeName}.${fieldName} must be object or function`,
+              );
             }
             setFieldProperties(newFieldConfig, fieldResolve);
           }
@@ -376,9 +389,11 @@ function createNewSchemaWithResolvers({
 
   if (defaultFieldResolver != null) {
     schema = mapSchema(schema, {
-      [MapperKind.OBJECT_FIELD]: fieldConfig => ({
+      [MapperKind.OBJECT_FIELD]: (fieldConfig) => ({
         ...fieldConfig,
-        resolve: fieldConfig.resolve != null ? fieldConfig.resolve : defaultFieldResolver,
+        resolve: fieldConfig.resolve != null
+          ? fieldConfig.resolve
+          : defaultFieldResolver,
       }),
     });
   }
@@ -388,9 +403,9 @@ function createNewSchemaWithResolvers({
 
 function setFieldProperties(
   field: any,
-  propertiesObj: Record<string, any>
+  propertiesObj: Record<string, any>,
 ) {
-  Object.keys(propertiesObj).forEach(propertyName => {
+  Object.keys(propertiesObj).forEach((propertyName) => {
     (field as any)[propertyName] = propertiesObj[propertyName];
   });
 }

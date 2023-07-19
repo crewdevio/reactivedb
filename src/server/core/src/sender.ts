@@ -11,7 +11,7 @@ export class Sender {
    * A queue of packets.
    */
   private packet_queue: Array<
-    { packet: Packet; channel: Channel; clientToSendTo?: number }
+    { packet: Packet; channel: Channel; clientToSendTo?: string }
   > = [];
 
   /**
@@ -35,7 +35,7 @@ export class Sender {
    * @param channel - The channel instance this packet is going to.
    * @param clientToSendTo - If set, only send to the specific client with that id
    */
-  public add(packet: Packet, channel: Channel, clientToSendTo?: number) {
+  public add(packet: Packet, channel: Channel, clientToSendTo?: string) {
     this.packet_queue.push({ packet, channel, clientToSendTo });
     this.send();
   }

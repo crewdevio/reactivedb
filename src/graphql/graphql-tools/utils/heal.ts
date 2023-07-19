@@ -1,17 +1,17 @@
 import {
   GraphQLList,
   GraphQLNonNull,
-  isNamedType,
-  isObjectType,
-  isInterfaceType,
-  isUnionType,
   isInputObjectType,
+  isInterfaceType,
   isLeafType,
   isListType,
+  isNamedType,
   isNonNullType,
+  isObjectType,
+  isUnionType,
 } from "../../deps.ts";
 
-import type { TypeMap } from './Interfaces.ts';
+import type { TypeMap } from "./Interfaces.ts";
 
 // Update any references to named schema types that disagree with the named
 // types found in schema.getTypeMap().
@@ -52,8 +52,8 @@ export function healTypes(
   config: {
     skipPruning: boolean;
   } = {
-      skipPruning: false,
-    }
+    skipPruning: false,
+  },
 ) {
   const actualNamedTypeMap: TypeMap = Object.create(null);
 
@@ -62,12 +62,12 @@ export function healTypes(
   // be updated accordingly.
 
   Object.entries(originalTypeMap).forEach(([typeName, namedType]) => {
-    if (namedType == null || typeName.startsWith('__')) {
+    if (namedType == null || typeName.startsWith("__")) {
       return;
     }
 
     const actualName = namedType.name;
-    if (actualName.startsWith('__')) {
+    if (actualName.startsWith("__")) {
       return;
     }
 
@@ -97,7 +97,7 @@ export function healTypes(
 
   Object.entries(originalTypeMap).forEach(([typeName, namedType]) => {
     // Heal all named types, except for dangling references, kept only to redirect.
-    if (!typeName.startsWith('__') && typeName in actualNamedTypeMap) {
+    if (!typeName.startsWith("__") && typeName in actualNamedTypeMap) {
       if (namedType != null) {
         healNamedType(namedType);
       }
@@ -105,7 +105,7 @@ export function healTypes(
   });
 
   for (const typeName of Object.keys(originalTypeMap)) {
-    if (!typeName.startsWith('__') && !(typeName in actualNamedTypeMap)) {
+    if (!typeName.startsWith("__") && !(typeName in actualNamedTypeMap)) {
       delete originalTypeMap[typeName];
     }
   }
@@ -121,7 +121,7 @@ export function healTypes(
       return;
     } else if (isInterfaceType(type)) {
       healFields(type);
-      if ('getInterfaces' in type) {
+      if ("getInterfaces" in type) {
         healInterfaces(type);
       }
       return;
@@ -155,13 +155,13 @@ export function healTypes(
   }
 
   function healInterfaces(type: any) {
-    if ('getInterfaces' in type) {
+    if ("getInterfaces" in type) {
       const interfaces = type.getInterfaces();
       interfaces.push(
         ...interfaces
           .splice(0)
           .map((iface: any) => healType(iface) as any)
-          .filter(Boolean)
+          .filter(Boolean),
       );
     }
   }
@@ -182,7 +182,7 @@ export function healTypes(
       ...types
         .splice(0)
         .map((t: any) => healType(t) as any)
-        .filter(Boolean)
+        .filter(Boolean),
     );
   }
 
@@ -193,7 +193,9 @@ export function healTypes(
       return healedType != null ? new (GraphQLList as any)(healedType) : null;
     } else if (isNonNullType(type)) {
       const healedType = healType((type as any).ofType);
-      return healedType != null ? new (GraphQLNonNull as any)(healedType) : null;
+      return healedType != null
+        ? new (GraphQLNonNull as any)(healedType)
+        : null;
     } else if (isNamedType(type)) {
       // If a type annotation on a field or an argument or a union member is
       // any `GraphQLNamedType` with a `name`, then it must end up identical
@@ -210,10 +212,13 @@ export function healTypes(
   }
 }
 
-function pruneTypes(typeMap: Record<string, any | null>, directives: ReadonlyArray<any>) {
+function pruneTypes(
+  typeMap: Record<string, any | null>,
+  directives: ReadonlyArray<any>,
+) {
   const implementedInterfaces: any = {};
   Object.values(typeMap).forEach((namedType: any) => {
-    if ('getInterfaces' in namedType) {
+    if ("getInterfaces" in namedType) {
       namedType.getInterfaces().forEach((iface: any) => {
         implementedInterfaces[iface.name] = true;
       });
@@ -239,7 +244,10 @@ function pruneTypes(typeMap: Record<string, any | null>, directives: ReadonlyArr
       }
     } else if (isInterfaceType(type)) {
       // prune interfaces without fields or without implementations
-      if (!Object.keys(type.getFields()).length || !(type.name in implementedInterfaces)) {
+      if (
+        !Object.keys(type.getFields()).length ||
+        !(type.name in implementedInterfaces)
+      ) {
         typeMap[typeName] = null;
         prunedTypeMap = true;
       }
