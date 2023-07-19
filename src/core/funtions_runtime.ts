@@ -6,10 +6,10 @@
  */
 
 import { importModule, importString } from "../../imports/dynamic_import.ts";
+import type { HandlerFunction, Middleare } from "../types.ts";
 import { IS_DENO_DEPLOY, Logs } from "../shared/utils.ts";
 import { join, toFileUrl } from "../../imports/path.ts";
 import type { WalkEntry } from "../../imports/fs.ts";
-import type { HandlerFunction } from "../types.ts";
 import * as colors from "../../imports/fmt.ts";
 
 export async function handleFiles(file: WalkEntry, count: number) {
@@ -44,13 +44,11 @@ export async function handleFiles(file: WalkEntry, count: number) {
     if (!methods.includes(method)) {
       Logs.error(
         colors.red(
-          `\n this method ${
-            colors.yellow(
-              `"${method}"`,
-            )
-          } is not allowed, in file: ${colors.cyan(`${file.path}`)}\n`,
+          `\n this method ${colors.yellow(
+            `"${method}"`
+          )} is not allowed, in file: ${colors.cyan(`${file.path}`)}\n`
         ),
-        true,
+        true
       );
     }
 
@@ -63,13 +61,11 @@ export async function handleFiles(file: WalkEntry, count: number) {
     if (!extentions.includes(ext)) {
       Logs.error(
         colors.red(
-          `this extention file is not supported ${
-            colors.yellow(
-              `"${ext}"`,
-            )
-          } is not supported, in file: ${colors.cyan(`${file.path}`)}\n`,
+          `this extention file is not supported ${colors.yellow(
+            `"${ext}"`
+          )} is not supported, in file: ${colors.cyan(`${file.path}`)}\n`
         ),
-        true,
+        true
       );
     }
 
@@ -92,43 +88,59 @@ export async function handleFiles(file: WalkEntry, count: number) {
     route = route.substring(0, route.length - 1);
   }
 
-  let handlerFunction;
+  const raw_import = await import(toFileUrl(join(Deno.cwd(), file.path)).href);
+  const handlerFunction: HandlerFunction | undefined = raw_import?.default;
+  const middlewares: Middleare[] = [];
 
-  if (IS_DENO_DEPLOY) {
-    handlerFunction = (
-      await importModule(toFileUrl(join(Deno.cwd(), file.path)).href)
-    )?.default as HandlerFunction | undefined;
-  } else {
-    handlerFunction = (
-      await import(toFileUrl(join(Deno.cwd(), file.path)).href)
-    )?.default as HandlerFunction | undefined;
+  if (raw_import?.middlewares) {
+    const _middlewares = raw_import?.middlewares as any[];
+
+    if (!Array.isArray(_middlewares)) {
+      Logs.error(
+        `\n in ${colors.green(
+          file.path
+        )}\n file should export a array of middlewares:\n\n ${`${colors.gray(
+          "export const middlewares:"
+        )} ${colors.green("Middleare[]")}${colors.red(" = ")}${colors.red(
+          "["
+        )}...${colors.red("];")}\n`}`,
+        true
+      );
+    }
+
+    _middlewares.forEach((m) => middlewares.push(m));
   }
 
   if (!handlerFunction || typeof handlerFunction !== "function") {
     Logs.error(
-      `\n in ${
-        colors.green(
-          file.path,
-        )
-      }\n file should export a function by default: ${`${
-        colors.magenta(
-          "export default",
-        )
-      } ${colors.green("function")}${colors.red("(")}ctx, utils${
-        colors.red(
-          ")",
-        )
-      } ${colors.red("{")} ... ${colors.red("}")}\n`}`,
-      true,
+      `\n in ${colors.green(
+        file.path
+      )}\n file should export a function by default: ${`${colors.magenta(
+        "export default"
+      )} ${colors.green("function")}${colors.red("(")}ctx, utils${colors.red(
+        ")"
+      )} ${colors.red("{")} ... ${colors.red("}")}\n`}`,
+      true
     );
+  }
 
-    handlerFunction = (ctx: any) => {};
+  if (handlerFunction?.name === "") {
+    Object.defineProperty(handlerFunction!, "name", {
+      value: `Anonimus FN() or Handler(FN) in ${file.path}\n    =>`,
+      writable: false,
+    });
+  } else {
+    Object.defineProperty(handlerFunction!, "name", {
+      value: `${handlerFunction?.name}() in ${file.path}\n    =>`,
+      writable: false,
+    });
   }
 
   return {
     name,
-    path: file.path,
     route,
+    middlewares,
+    path: file.path,
     handler: handlerFunction!,
     extention: validateExt(extention, file),
     methods: groupRegx.test(method)

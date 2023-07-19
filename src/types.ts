@@ -5,7 +5,12 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import type { RouterContext } from "../imports/server_oak.ts";
+import type {
+  RouterContext,
+  Middleware as OakMiddleare,
+  State,
+  Context as OakContext,
+} from "../imports/server_oak.ts";
 import type { Database as DB } from "../imports/mongo.ts";
 import { MongoClient } from "../imports/mongo.ts";
 import { Packet } from "./server/mod.ts";
@@ -72,6 +77,14 @@ export interface ApiCoreProps {
 
 export type Context = RouterContext<string>;
 
+export type Middleare<
+  S extends State = Record<string, any>,
+  T extends OakContext<State, Record<string, any>> = OakContext<
+    S,
+    Record<string, any>
+  >
+> = OakMiddleare<S, T>;
+
 export type HandlerFunction = (context: Context) => void | Promise<void>;
 
 export type Methods =
@@ -106,3 +119,8 @@ export interface EventSender<T extends any = any> {
   data: T;
   event: "child_removed" | "child_changed" | "child_added";
 }
+
+export type SFunction = (
+  context: Context,
+  utils: Utilities
+) => Promise<void> | void;

@@ -32,14 +32,19 @@ export async function CreateRouter(DB: mongo.Database, secret: string) {
   let count = 0;
 
   if (await exists("./functions")) {
-    for await (
-      const file of walk("./functions", {
-        exts: ["ts", "js", "tsx", "jsx"],
-      })
-    ) {
+    for await (const file of walk("./functions", {
+      exts: ["ts", "js", "tsx", "jsx"],
+    })) {
       if (file.isFile && !file.name.startsWith("_")) {
-        const { route, methods, handler, extention, name, path } =
-          await handleFiles(file, count);
+        const {
+          route,
+          methods,
+          handler,
+          extention,
+          name,
+          path,
+          middlewares = [],
+        } = await handleFiles(file, count);
 
         for (const method of methods) {
           schema.push({
@@ -54,10 +59,11 @@ export async function CreateRouter(DB: mongo.Database, secret: string) {
           // @ts-ignore
           router[method](
             route,
+            ...middlewares,
             //@ts-ignore
             async (ctx) =>
               //@ts-ignore
-              await handler(ctx, { Database: DB, Events: reactiveEvents }),
+              await handler(ctx, { Database: DB, Events: reactiveEvents })
           );
         }
 
@@ -158,7 +164,7 @@ export async function CreateRouter(DB: mongo.Database, secret: string) {
       const query = DB.collection(collection);
       const finded = await query.findOne(
         { _id: new Bson.ObjectId(id) },
-        { noCursorTimeout: false },
+        { noCursorTimeout: false }
       );
 
       if (finded) {
@@ -198,7 +204,7 @@ export async function CreateRouter(DB: mongo.Database, secret: string) {
     const query = DB.collection(collection);
     const finded = await query.findOne(
       { _id: new Bson.ObjectId(id) },
-      { noCursorTimeout: false },
+      { noCursorTimeout: false }
     );
 
     if (finded) {
@@ -237,7 +243,7 @@ export async function CreateRouter(DB: mongo.Database, secret: string) {
     const query = DB.collection(collection);
     const finded = await query.findOne(
       { _id: new Bson.ObjectId(id) },
-      { noCursorTimeout: false },
+      { noCursorTimeout: false }
     );
 
     if (finded) {
@@ -309,7 +315,7 @@ export async function CreateRouter(DB: mongo.Database, secret: string) {
       });
 
       response.body = { token: true };
-    },
+    }
   );
 
   router.post(Routes.auth.login, async ({ response, request }) => {
@@ -345,7 +351,7 @@ export async function CreateRouter(DB: mongo.Database, secret: string) {
             email: findedEmail,
             uuid,
           },
-          secret,
+          secret
         );
 
         response.status = 200;
