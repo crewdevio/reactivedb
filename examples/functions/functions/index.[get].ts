@@ -1,4 +1,4 @@
-import type { Context, Utilities, Middleare } from "../../../mod.ts";
+import type { Context, Utilities, Middleware } from "../../../mod.ts";
 import { Handler, HandlerMiddlewares } from "../../../mod.ts";
 
 export const middlewares = HandlerMiddlewares([

@@ -5,12 +5,11 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { importModule, importString } from "../../imports/dynamic_import.ts";
-import type { HandlerFunction, Middleare } from "../types.ts";
-import { IS_DENO_DEPLOY, Logs } from "../shared/utils.ts";
+import type { HandlerFunction, Middleware } from "../types.ts";
 import { join, toFileUrl } from "../../imports/path.ts";
 import type { WalkEntry } from "../../imports/fs.ts";
 import * as colors from "../../imports/fmt.ts";
+import { Logs } from "../shared/utils.ts";
 
 export async function handleFiles(file: WalkEntry, count: number) {
   const groupRegx = /\[((?:.|\r?\n)+?)\]/gim;
@@ -90,7 +89,7 @@ export async function handleFiles(file: WalkEntry, count: number) {
 
   const raw_import = await import(toFileUrl(join(Deno.cwd(), file.path)).href);
   const handlerFunction: HandlerFunction | undefined = raw_import?.default;
-  const middlewares: Middleare[] = [];
+  const middlewares: Middleware[] = [];
 
   if (raw_import?.middlewares) {
     const _middlewares = raw_import?.middlewares as any[];

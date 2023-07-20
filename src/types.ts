@@ -32,7 +32,8 @@ export interface ReactiveDBProps {
 export interface ReactiveCoreProps {
   connection: string | DataBaseProps;
   port?: number;
-  secret: string;
+  secretKey: CryptoKey;
+  middlewares?: Middleware[];
 }
 
 export interface IPacket extends Packet {
@@ -77,7 +78,7 @@ export interface ApiCoreProps {
 
 export type Context = RouterContext<string>;
 
-export type Middleare<
+export type Middleware<
   S extends State = Record<string, any>,
   T extends OakContext<State, Record<string, any>> = OakContext<
     S,
@@ -124,3 +125,8 @@ export type SFunction = (
   context: Context,
   utils: Utilities
 ) => Promise<void> | void;
+
+export interface JWTPayload {
+  email: string;
+  uuid: string;
+}

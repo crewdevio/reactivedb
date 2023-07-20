@@ -1,54 +1,45 @@
 import type { Context } from "../../imports/server_oak.ts";
-import { validate } from "../libs/uuid/v4.js";
+import * as mongo from "../../imports/mongo.ts";
 import { jwt } from "../../imports/jwt.ts";
+import { JWTPayload } from "../types.ts";
 
 export async function AuthToken(
-  { request, response }: Context,
+  ctx: Context,
   next: () => Promise<any> | any,
+  secretKey: CryptoKey,
+  DB: mongo.Database
 ) {
-  if (request.url.search === "") {
-    response.status = 401;
-    response.body = {
+  try {
+    const token = ctx.request.headers.get("token")!;
+
+    const payload = (await jwt.verify(
+      token,
+      secretKey
+    )) as unknown as JWTPayload;
+
+    const users = DB.collection("Auth_users");
+
+    const user = await users.findOne({
+      uuid: payload.uuid,
+      email: payload.email,
+    });
+
+    if (user !== undefined) {
+      await next();
+    } else {
+      ctx.response.status = 404;
+      ctx.response.body = {
+        error: true,
+        message: "User not found",
+      };
+    }
+  } catch (error) {
+    ctx.response.status = 500;
+    ctx.response.body = {
       error: true,
-      message:
-        "Unauthorized must provide an authorization token and a user uuid",
+      message: `${error?.message}`,
     };
 
     return;
-  } else {
-    const params = request.url.searchParams.has("token") &&
-      request.url.searchParams.has("uuid");
-
-    if (params) {
-      const token = request.url.searchParams.get("token")!;
-      const uuid = request.url.searchParams.get("uuid")!;
-
-      if (!validate(uuid)) {
-        response.status = 401;
-        response.body = { error: true, message: "user uuid is invalid" };
-        return;
-      }
-
-      const [header, payload, signature] = jwt.decode(token);
-
-      if (!(header && payload && signature)) {
-        response.status = 401;
-        response.body = {
-          error: true,
-          message: "the sent token is not correct",
-        };
-        return;
-      }
-
-      await next();
-    } else {
-      response.status = 401;
-      response.body = {
-        error: true,
-        message:
-          "Unauthorized must provide an authorization token and a user uuid",
-      };
-      return;
-    }
   }
 }

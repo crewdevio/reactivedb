@@ -14,7 +14,7 @@ import type { DataBaseProps } from "../types.ts";
  * @param {string | DataBaseProps} connection connection config
  */
 export async function StartDataBase(
-  connection: string | DataBaseProps = "mongodb://127.0.0.1:27017/Default",
+  connection: string | DataBaseProps = "mongodb://127.0.0.1:27017/Default"
 ) {
   try {
     const client = new MongoClient();
@@ -56,7 +56,7 @@ export async function StartDataBase(
         },
       });
 
-      Logs.info("Database started for Realtime core, Functions and GraphQL\n");
+      Logs.info("Database started for Realtime and Functions\n");
 
       return {
         Database: client.database(db),

@@ -17,7 +17,7 @@ import { generate } from "../libs/uuid/v4.js";
 import { jwt } from "../../imports/jwt.ts";
 import { Bson } from "../database/mod.ts";
 
-export async function CreateRouter(DB: mongo.Database, secret: string) {
+export async function CreateRouter(DB: mongo.Database, secretKey: CryptoKey) {
   const router = new Router();
 
   const schema: Array<{
@@ -77,89 +77,161 @@ export async function CreateRouter(DB: mongo.Database, secret: string) {
   }
 
   // * reactive db core api
-  router.get(Routes.id, async ({ response, params }) => {
-    try {
-      const id = params?.id!;
-      const collection = params?.collection!;
-
-      const data = DB.collection(collection);
-      const find = await data
-        .find({ _id: new Bson.ObjectId(id) }, { noCursorTimeout: false })
-        .toArray();
-
-      response.status = 200;
-      response.body = find;
-    } catch (error: any) {
-      response.status = 500;
-      response.body = {
-        message: error?.message,
-        error,
-      };
-    }
-  });
-
-  router.get(Routes.collection, async ({ request, response, params }) => {
-    try {
-      if (decodeURIComponent(request.url.pathname) === "/[v1]/*") {
-        const collections = await DB.listCollectionNames();
-
-        response.status = 200;
-        response.body = { collections };
-      } else {
+  router.get(
+    Routes.id,
+    async (ctx, next) => {
+      await AuthToken(ctx, next, secretKey, DB);
+    },
+    async ({ response, params }) => {
+      try {
+        const id = params?.id!;
         const collection = params?.collection!;
-        const data = DB.collection(collection);
 
+        const data = DB.collection(collection);
         const find = await data
-          .find(undefined, { noCursorTimeout: false })
+          .find({ _id: new Bson.ObjectId(id) }, { noCursorTimeout: false })
           .toArray();
 
         response.status = 200;
         response.body = find;
+      } catch (error: any) {
+        response.status = 500;
+        response.body = {
+          message: error?.message,
+          error,
+        };
       }
-    } catch (error: any) {
-      response.status = 500;
-      response.body = {
-        message: error?.message,
-        error,
-      };
     }
-  });
+  );
 
-  router.post(Routes.collection, async ({ response, request, params }) => {
-    try {
-      const collection = params?.collection!;
-      const body = request.body({ type: "json" });
+  router.get(
+    Routes.collection,
+    async (ctx, next) => {
+      await AuthToken(ctx, next, secretKey, DB);
+    },
+    async ({ request, response, params }) => {
+      try {
+        if (decodeURIComponent(request.url.pathname) === "/[v1]/*") {
+          const collections = await DB.listCollectionNames();
 
-      const requestData = await body.value;
-      const query = DB.collection(collection);
+          response.status = 200;
+          response.body = { collections };
+        } else {
+          const collection = params?.collection!;
+          const data = DB.collection(collection);
 
-      const added = await query.insertOne(requestData);
+          const find = await data
+            .find(undefined, { noCursorTimeout: false })
+            .toArray();
 
-      const finds = await query
-        .find(undefined, { noCursorTimeout: false })
-        .toArray();
-
-      reactiveEvents.post({
-        to: collection,
-        data: [...transform(finds)],
-        event: "child_added",
-      });
-
-      response.status = 200;
-      response.body = { ok: true };
-    } catch (error: any) {
-      response.status = 500;
-      response.body = {
-        message: error?.message,
-        error,
-      };
+          response.status = 200;
+          response.body = find;
+        }
+      } catch (error: any) {
+        response.status = 500;
+        response.body = {
+          message: error?.message,
+          error,
+        };
+      }
     }
-  });
+  );
 
-  router.delete(Routes.id, async ({ response, params }) => {
-    try {
+  router.post(
+    Routes.collection,
+    async (ctx, next) => {
+      await AuthToken(ctx, next, secretKey, DB);
+    },
+    async ({ response, request, params }) => {
+      try {
+        const collection = params?.collection!;
+        const body = request.body({ type: "json" });
+
+        const requestData = await body.value;
+        const query = DB.collection(collection);
+
+        const added = await query.insertOne(requestData);
+
+        const finds = await query
+          .find(undefined, { noCursorTimeout: false })
+          .toArray();
+
+        reactiveEvents.post({
+          to: collection,
+          data: [...transform(finds)],
+          event: "child_added",
+        });
+
+        response.status = 200;
+        response.body = { ok: true };
+      } catch (error: any) {
+        response.status = 500;
+        response.body = {
+          message: error?.message,
+          error,
+        };
+      }
+    }
+  );
+
+  router.delete(
+    Routes.id,
+    async (ctx, next) => {
+      await AuthToken(ctx, next, secretKey, DB);
+    },
+    async ({ response, params }) => {
+      try {
+        const collection = params?.collection!;
+        const id = params?.id!;
+
+        const query = DB.collection(collection);
+        const finded = await query.findOne(
+          { _id: new Bson.ObjectId(id) },
+          { noCursorTimeout: false }
+        );
+
+        if (finded) {
+          await query.deleteOne(finded as any);
+          const finds = await query
+            .find(undefined, { noCursorTimeout: false })
+            .toArray();
+
+          reactiveEvents.post({
+            to: collection,
+            data: [...transform(finds)],
+            event: "child_removed",
+          });
+
+          response.status = 200;
+          response.body = { ok: true };
+        } else {
+          response.status = 404;
+          response.body = {
+            ok: false,
+            message: `can't found "${id}" resource`,
+          };
+        }
+      } catch (error) {
+        response.status = 500;
+        response.body = {
+          message: error?.message,
+          error,
+        };
+      }
+    }
+  );
+
+  router.put(
+    Routes.id,
+    async (ctx, next) => {
+      await AuthToken(ctx, next, secretKey, DB);
+    },
+    async ({ response, request, params }) => {
       const collection = params?.collection!;
       const id = params?.id!;
+
+      const body = request.body({ type: "json" });
+      const { _id, ...newData } = await body.value;
 
       const query = DB.collection(collection);
       const finded = await query.findOne(
@@ -168,7 +240,10 @@ export async function CreateRouter(DB: mongo.Database, secret: string) {
       );
 
       if (finded) {
-        await query.deleteOne(finded as any);
+        const { ...oldData } = finded as any;
+
+        await query.updateOne(oldData, { $set: { ...newData } });
+
         const finds = await query
           .find(undefined, { noCursorTimeout: false })
           .toArray();
@@ -176,7 +251,7 @@ export async function CreateRouter(DB: mongo.Database, secret: string) {
         reactiveEvents.post({
           to: collection,
           data: [...transform(finds)],
-          event: "child_removed",
+          event: "child_changed",
         });
 
         response.status = 200;
@@ -185,98 +260,64 @@ export async function CreateRouter(DB: mongo.Database, secret: string) {
         response.status = 404;
         response.body = { ok: false, message: `can't found "${id}" resource` };
       }
-    } catch (error) {
-      response.status = 500;
-      response.body = {
-        message: error?.message,
-        error,
-      };
-    }
-  });
-
-  router.put(Routes.id, async ({ response, request, params }) => {
-    const collection = params?.collection!;
-    const id = params?.id!;
-
-    const body = request.body({ type: "json" });
-    const { _id, ...newData } = await body.value;
-
-    const query = DB.collection(collection);
-    const finded = await query.findOne(
-      { _id: new Bson.ObjectId(id) },
-      { noCursorTimeout: false }
-    );
-
-    if (finded) {
-      const { ...oldData } = finded as any;
-
-      await query.updateOne(oldData, { $set: { ...newData } });
-
-      const finds = await query
-        .find(undefined, { noCursorTimeout: false })
-        .toArray();
-
-      reactiveEvents.post({
-        to: collection,
-        data: [...transform(finds)],
-        event: "child_changed",
-      });
 
       response.status = 200;
       response.body = { ok: true };
-    } else {
-      response.status = 404;
-      response.body = { ok: false, message: `can't found "${id}" resource` };
     }
+  );
 
-    response.status = 200;
-    response.body = { ok: true };
-  });
+  router.patch(
+    Routes.id,
+    async (ctx, next) => {
+      await AuthToken(ctx, next, secretKey, DB);
+    },
+    async ({ response, request, params }) => {
+      const collection = params?.collection!;
+      const id = params?.id!;
 
-  router.patch(Routes.id, async ({ response, request, params }) => {
-    const collection = params?.collection!;
-    const id = params?.id!;
+      const body = request.body({ type: "json" });
+      const { _id, ...newData } = await body.value;
 
-    const body = request.body({ type: "json" });
-    const { _id, ...newData } = await body.value;
+      const query = DB.collection(collection);
+      const finded = await query.findOne(
+        { _id: new Bson.ObjectId(id) },
+        { noCursorTimeout: false }
+      );
 
-    const query = DB.collection(collection);
-    const finded = await query.findOne(
-      { _id: new Bson.ObjectId(id) },
-      { noCursorTimeout: false }
-    );
+      if (finded) {
+        const { ...oldData } = finded as any;
 
-    if (finded) {
-      const { ...oldData } = finded as any;
+        await query.updateOne(oldData, { $set: { ...newData } });
 
-      await query.updateOne(oldData, { $set: { ...newData } });
+        const finds = await query
+          .find(undefined, { noCursorTimeout: false })
+          .toArray();
 
-      const finds = await query
-        .find(undefined, { noCursorTimeout: false })
-        .toArray();
+        reactiveEvents.post({
+          to: collection,
+          data: [...transform(finds)],
+          event: "child_changed",
+        });
 
-      reactiveEvents.post({
-        to: collection,
-        data: [...transform(finds)],
-        event: "child_changed",
-      });
+        response.status = 200;
+        response.body = { ok: true };
+      } else {
+        response.status = 404;
+        response.body = { ok: false, message: `can't found "${id}" resource` };
+      }
 
       response.status = 200;
       response.body = { ok: true };
-    } else {
-      response.status = 404;
-      response.body = { ok: false, message: `can't found "${id}" resource` };
     }
-
-    response.status = 200;
-    response.body = { ok: true };
-  });
+  );
 
   // * reactive db core api
 
   router.post(
     Routes.auth.register,
-    // AuthToken,
+    async (ctx, next) => {
+      await AuthToken(ctx, next, secretKey, DB);
+    },
     async ({ response, request }) => {
       const users = DB.collection("Auth_users");
 
@@ -284,7 +325,7 @@ export async function CreateRouter(DB: mongo.Database, secret: string) {
       const { email, password } = await body.value;
 
       const finded = await users.findOne({ email }, { noCursorTimeout: false });
-      const encryptedPassword = createHash("sha1")
+      const encryptedPassword = createHash("sha512")
         .update(password.toString())
         .toString();
 
@@ -325,7 +366,7 @@ export async function CreateRouter(DB: mongo.Database, secret: string) {
       const body = request.body({ type: "json" });
       const { email, password } = await body.value;
 
-      const userPassword = createHash("sha1")
+      const userPassword = createHash("sha512")
         .update(password.toString())
         .toString();
 
@@ -347,11 +388,10 @@ export async function CreateRouter(DB: mongo.Database, secret: string) {
         const Token = await jwt.create(
           { alg: "HS512", typ: "JWT" },
           {
-            password: userPassword,
             email: findedEmail,
             uuid,
           },
-          secret
+          secretKey
         );
 
         response.status = 200;
@@ -370,41 +410,53 @@ export async function CreateRouter(DB: mongo.Database, secret: string) {
     }
   });
 
-  router.post(Routes.auth.delete, async ({ request, response }) => {
-    const users = DB.collection("Auth_users");
-    const body = request.body({ type: "json" });
-    const { uuid } = await body.value;
+  router.post(
+    Routes.auth.delete,
+    async (ctx, next) => {
+      await AuthToken(ctx, next, secretKey, DB);
+    },
+    async ({ request, response }) => {
+      const users = DB.collection("Auth_users");
+      const body = request.body({ type: "json" });
+      const { uuid } = await body.value;
 
-    const finded = (await users.findOne({ uuid })) as any;
+      const finded = (await users.findOne({ uuid })) as any;
 
-    if (finded) {
-      await users.deleteOne(finded);
+      if (finded) {
+        await users.deleteOne(finded);
 
-      response.status = 200;
-      response.body = { ok: true };
-    } else {
-      response.status = 409;
-      response.body = { error: true, message: "this account not exist." };
+        response.status = 200;
+        response.body = { ok: true };
+      } else {
+        response.status = 409;
+        response.body = { error: true, message: "this account not exist." };
+      }
     }
-  });
+  );
 
-  router.post(Routes.auth.disable, async ({ request, response }) => {
-    const users = DB.collection("Auth_users");
-    const body = request.body({ type: "json" });
-    const { uuid, active } = await body.value;
+  router.post(
+    Routes.auth.disable,
+    async (ctx, next) => {
+      await AuthToken(ctx, next, secretKey, DB);
+    },
+    async ({ request, response }) => {
+      const users = DB.collection("Auth_users");
+      const body = request.body({ type: "json" });
+      const { uuid, active } = await body.value;
 
-    const finded = (await users.findOne({ uuid })) as any;
+      const finded = (await users.findOne({ uuid })) as any;
 
-    if (finded) {
-      await users.updateOne(finded, { $set: { active } });
+      if (finded) {
+        await users.updateOne(finded, { $set: { active } });
 
-      response.status = 200;
-      response.body = { ok: true };
-    } else {
-      response.status = 409;
-      response.body = { error: true, message: "this account not exist." };
+        response.status = 200;
+        response.body = { ok: true };
+      } else {
+        response.status = 409;
+        response.body = { error: true, message: "this account not exist." };
+      }
     }
-  });
+  );
 
   return router;
 }

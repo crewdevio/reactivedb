@@ -13,27 +13,14 @@ import { Api } from "../../../api/mod.ts";
 import { Client } from "./client.ts";
 import { Packet } from "./packet.ts";
 
-/**
- * remove auth from search params
- * @param url
- */
-function sanitizeURL(url: string) {
-  const [base = "", auth = ""] = url.split("?");
-
-  return {
-    base: base.trim(),
-    auth: auth.trim(),
-  };
-}
-
 interface RunOptionsTLS extends ListenOptionsTls {
   database: string | DataBaseProps;
-  secret: string;
+  secretKey: CryptoKey;
 }
 
 interface RunOptions extends ListenOptionsBase {
   database: string | DataBaseProps;
-  secret: string;
+  secretKey: CryptoKey;
 }
 
 /**
@@ -59,7 +46,11 @@ export class Server extends EventEmitter {
    */
   private transmitter: Transmitter;
 
-  private secret = "Default";
+  /**
+   * Secure CryptoKey for Auth
+   */
+  //@ts-ignore
+  private secretKey: CryptoKey;
   private options: RunOptions | RunOptionsTLS | null = null;
   private AbortController: AbortController;
 
@@ -110,11 +101,11 @@ export class Server extends EventEmitter {
 
     const { Database } = (await StartDataBase(this.database_connection))!;
 
-    this.secret = options.secret;
+    this.secretKey = options.secretKey;
     this.Database = Database;
     this.options = options;
 
-    await Api(this.Database, this.secret, this.oak_server);
+    await Api(this.Database, this.secretKey, this.oak_server);
     await this.acceptWebSockets();
 
     return {
@@ -143,7 +134,7 @@ export class Server extends EventEmitter {
       if (ctx.request.url.pathname === "/[WebSocket]") {
         if (ctx.isUpgradable) {
           const ws = ctx.upgrade();
-          const id = ctx.request.url.searchParams.get("client-uid")!;
+          const id = ctx.request.url.searchParams.get("x-authorization-uuid")!;
 
           const client = super.createClient(id, ws);
 
@@ -166,7 +157,7 @@ export class Server extends EventEmitter {
 
           ws.addEventListener("close", async () => {
             await this.transmitter.handlePacket(
-              new Packet(client, `disconnect`),
+              new Packet(client, `disconnect`)
             );
             super.removeClient(client.id);
           });
@@ -201,7 +192,7 @@ export class Server extends EventEmitter {
    */
   protected async handleMessageAsString(
     client: Client,
-    message: string,
+    message: string
   ): Promise<void> {
     switch (message) {
       case "id":
@@ -215,7 +206,7 @@ export class Server extends EventEmitter {
 
       case "test":
         return client.socket.send(
-          `Server started on ${this.options?.hostname}:${this.options?.port}.`,
+          `Server started on ${this.options?.hostname}:${this.options?.port}.`
         );
 
       // If the message isn't any of the above, then it we expect the message
@@ -234,7 +225,7 @@ export class Server extends EventEmitter {
    */
   protected async handleMessageAsJsonString(
     client: Client,
-    message: string,
+    message: string
   ): Promise<void> {
     try {
       const json = JSON.parse(message);
@@ -252,7 +243,7 @@ export class Server extends EventEmitter {
         const packet = new Packet(
           client,
           json.send_packet.to,
-          json.send_packet.message,
+          json.send_packet.message
         );
         return await this.transmitter.handlePacket(packet);
       }

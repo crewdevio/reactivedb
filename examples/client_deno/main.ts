@@ -1,6 +1,14 @@
-import { createClient } from "../../client/mod.ts";
+import { createClient, Auth } from "../../client/mod.ts";
 
-const ReactiveDB = createClient("http://localhost:8080");
+const url = "http://localhost:8080";
+
+const auth = new Auth(url);
+const token = await auth.loginWithEmailAndPassword(
+  "erick@open.com",
+  "12345678"
+);
+
+const ReactiveDB = createClient(url, token!);
 
 const client = ReactiveDB();
 

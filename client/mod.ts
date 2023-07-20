@@ -5,9 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { Auth as Authentication } from "./auth/mod.ts";
 import type { ReactiveEvents } from "../src/types.ts";
 import { Routes } from "../src/shared/utils.ts";
+import type { Token } from "./auth/mod.ts";
+import { Auth } from "./auth/mod.ts";
 import { parseURL } from "./util.ts";
 
 const validStream = (stream: string) =>
@@ -86,16 +87,13 @@ class ReactiveDB {
 
   #__parse__url: ReturnType<typeof parseURL>;
 
-  /**
-   * authentication
-   */
-  public Auth: Authentication;
+  #__token__: Token;
 
-  constructor(connection: string) {
+  constructor(connection: string, token: Token) {
     const url = parseURL(connection);
 
-    this.Auth = new Authentication(url.toHttp());
-    this.#__uuid__ = window.crypto.randomUUID();
+    this.#__token__ = token;
+    this.#__uuid__ = token.uuid;
     this.#__parse__url = url;
     this.#__url__ = url.toWs();
     this.#__ws__ = this.#Websocket();
@@ -112,13 +110,16 @@ class ReactiveDB {
       get: "get",
     };
 
-    // wait a timeout
-    // setTimeout(() => {
-    //   this.#Send({
-    //     to: excludes.collection,
-    //     data: {},
-    //   });
-    // }, 1000);
+    this.#__ws__!.addEventListener("close", (e) => {
+      switch (e.code) {
+        case 4999:
+          throw ClientError(`WS Server Error: ${e.reason}`);
+        case 4004:
+          throw ClientError(`WS Server: ${e.reason}`);
+        default:
+          throw ClientError(`WS Server Error: ${e.reason}`);
+      }
+    });
   }
 
   /**
@@ -128,10 +129,8 @@ class ReactiveDB {
     const url = new URL(this.#__url__);
 
     // send token and uuid for auth
-    // url.searchParams.set("x-authorization-token", this.Auth.token?.token!);
-    // url.searchParams.set("x-authorization-uuid", this.Auth.token?.uuid!);
-
-    url.searchParams.set("client-uid", this.#__uuid__);
+    url.searchParams.set("x-authorization-token", this.#__token__?.token!);
+    url.searchParams.set("x-authorization-uuid", this.#__token__?.uuid! ?? "");
 
     return new WebSocket(url.toString());
   }
@@ -147,7 +146,7 @@ class ReactiveDB {
           to,
           message: data,
         },
-      }),
+      })
     );
   }
 
@@ -181,7 +180,7 @@ class ReactiveDB {
         this.#__ws__.send(
           JSON.stringify({
             connect_to: [this.#__to__, excludes.collection],
-          }),
+          })
         );
 
         callback(event!);
@@ -190,7 +189,7 @@ class ReactiveDB {
       this.#__instance__ = false;
     } else {
       ClientWarning(
-        "you can't connect to multiple collection using only one instance.",
+        "you can't connect to multiple collection using only one instance."
       );
     }
 
@@ -229,7 +228,7 @@ class ReactiveDB {
    */
   public on<T extends any = any>(
     evt: ReactiveEvents,
-    callback = (_data: T | T[], _event?: ReactiveEvents) => {},
+    callback = (_data: T | T[], _event?: ReactiveEvents) => {}
   ) {
     if (!this.#__invalidate__) {
       this.#Connected(() => {
@@ -251,13 +250,13 @@ class ReactiveDB {
           const { message } = JSON.parse(stream.data);
           const { data, uuid = "", event } = JSON.parse(message);
 
-          const isLoadEvent = uuid === this.#__uuid__ &&
-            event === this.#__events__.load;
+          const isLoadEvent =
+            uuid === this.#__uuid__ && event === this.#__events__.load;
 
           if (event === excludes.collection) {
             if (!data[0].includes(this.#__to__)) {
               throw ClientError(
-                `"${this.#__to__}" collection not exists in the database.`,
+                `"${this.#__to__}" collection not exists in the database.`
               );
             }
           }
@@ -449,8 +448,10 @@ class ReactiveDB {
  * create multiples instances
  * @param connection
  */
-export function createClient(connection: string) {
-  return () => new ReactiveDB(connection);
+export function createClient(connection: string, token: Token) {
+  return () => new ReactiveDB(connection, token);
 }
 
 export type Reactive = ReactiveDB;
+
+export { Auth };

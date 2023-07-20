@@ -8,7 +8,7 @@
 import type {
   Actions,
   IPacket,
-  Middleare,
+  Middleware,
   ReactiveCoreProps,
   SFunction,
 } from "../types.ts";
@@ -36,14 +36,14 @@ import { server } from "../server/mod.ts";
 export async function ReactiveCore({
   connection,
   port = 1777,
-  secret,
+  secretKey,
 }: ReactiveCoreProps) {
   // Run websockets server
   const instance = await server.init({
     database: connection,
     hostname: "0.0.0.0",
     port,
-    secret,
+    secretKey,
   });
 
   port = cyan(port.toString()) as any as number;
@@ -272,6 +272,63 @@ export function Handler(fn: SFunction) {
   return fn;
 }
 
-export function HandlerMiddlewares(middlewares: Middleare[]) {
+export function HandlerMiddlewares(middlewares: Middleware[]) {
   return middlewares;
+}
+
+const generateKey = crypto.subtle.generateKey;
+
+type GenerateKeyTypes = Parameters<typeof generateKey>;
+
+export class Crypto {
+  #algorithm: GenerateKeyTypes[0] | AesKeyGenParams | HmacKeyGenParams;
+  #keyUsages: GenerateKeyTypes[2];
+  #extractable: GenerateKeyTypes[1];
+  #jsonWebKey: JsonWebKey | null = null;
+  #criptoKey: Awaited<ReturnType<typeof generateKey>> | null = null;
+
+  constructor(
+    algorithm: GenerateKeyTypes[0] | AesKeyGenParams | HmacKeyGenParams,
+    extractable: boolean,
+    keyUsages: KeyUsage[]
+  ) {
+    this.#algorithm = algorithm;
+    this.#extractable = extractable;
+    this.#keyUsages = keyUsages;
+  }
+
+  public async generateKey() {
+    this.#criptoKey = await crypto.subtle.generateKey(
+      this.#algorithm,
+      this.#extractable,
+      this.#keyUsages
+    );
+  }
+
+  public async exportToJWKBase64() {
+    this.#jsonWebKey = await crypto.subtle.exportKey(
+      "jwk",
+      this.#criptoKey as CryptoKey
+    );
+
+    const jwk = this.#jsonWebKey;
+
+    return {
+      toBase64() {
+        return btoa(JSON.stringify(jwk));
+      },
+    };
+  }
+
+  public async importFromJWKBase64(base64: string) {
+    const jwk = JSON.parse(atob(base64)) as JsonWebKey;
+
+    return await crypto.subtle.importKey(
+      "jwk",
+      jwk,
+      this.#algorithm,
+      this.#extractable,
+      this.#keyUsages
+    );
+  }
 }

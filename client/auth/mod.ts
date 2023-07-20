@@ -7,12 +7,18 @@
 
 import { Routes } from "../../src/shared/utils.ts";
 
+export interface Token {
+  email: string;
+  uuid: string;
+  token: string;
+}
+
 /**
  * authentication module
  */
 export class Auth {
   #url: string;
-  public token: { email: string; uuid: string; token: string } | null = null;
+  public token: Token | null = null;
   constructor(connection: string) {
     this.#url = connection;
   }

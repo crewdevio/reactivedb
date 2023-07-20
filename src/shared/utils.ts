@@ -109,14 +109,14 @@ export function filterData(path: string) {
 }
 
 export const Routes = {
-  id: "/[v1]/:collection/:id",
-  collection: "/[v1]/:collection",
-  schema: "/[v1]/api_schema",
+  id: "/v1/:collection/:id",
+  collection: "/v1/:collection",
+  schema: "/v1/api_schema",
   auth: {
-    register: "/[auth]/registeUserWithEmailAndPassword",
-    login: "/[auth]/loginWithEmailAndPassword",
-    delete: "/[auth]/deleteEmailAccount",
-    disable: "/[auth]/disableEmailAccount",
+    register: "/auth/registeUserWithEmailAndPassword",
+    login: "/auth/loginWithEmailAndPassword",
+    delete: "/auth/deleteEmailAccount",
+    disable: "/auth/disableEmailAccount",
   },
 };
 

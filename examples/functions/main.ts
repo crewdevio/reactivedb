@@ -1,4 +1,4 @@
-import { ReactiveCore } from "../../mod.ts";
+import { ReactiveCore, Crypto } from "../../mod.ts";
 import { load } from "../../imports/env.ts";
 
 // load envs
@@ -8,9 +8,16 @@ const {
   REACTIVEE_HOST_DB,
   REACTIVE_DB_NAME,
   REACTIVE_DB_PORT,
-  REACTIVE_DB_SECRET,
   REACTIVE_SERVER_PORT,
+  REACTIVE_JWK_BASE_64,
 } = await load();
+
+const crypt = new Crypto({ name: "HMAC", hash: "SHA-512" }, true, [
+  "sign",
+  "verify",
+]);
+
+const secretKey = await crypt.importFromJWKBase64(REACTIVE_JWK_BASE_64);
 
 await ReactiveCore({
   connection: {
@@ -24,5 +31,5 @@ await ReactiveCore({
     },
   },
   port: Number(REACTIVE_SERVER_PORT),
-  secret: REACTIVE_DB_SECRET,
+  secretKey,
 });
