@@ -2,8 +2,8 @@
 // deno-lint-ignore-file
 // This code was bundled using `deno bundle` and it's not recommended to edit it manually
 
-const { Deno  } = globalThis;
-typeof Deno?.noColor === "boolean" ? Deno.noColor : true;
+const { Deno: Deno1  } = globalThis;
+typeof Deno1?.noColor === "boolean" ? Deno1.noColor : true;
 new RegExp([
     "[\\u001B\\u009B][[\\]()#;?]*(?:(?:(?:(?:;[-a-zA-Z\\d\\/#&.:=?%@~_]+)*|[a-zA-Z\\d]+(?:;[-a-zA-Z\\d\\/#&.:=?%@~_]*)*)?\\u0007)",
     "(?:(?:\\d{1,4}(?:;\\d{0,4})*)?[\\dA-PR-TZcf-nq-uy=><~]))"
@@ -17,16 +17,17 @@ var MutableEvents;
     MutableEvents["Get"] = "get";
 })(MutableEvents || (MutableEvents = {}));
 const Routes = {
-    id: "/[v1]/:collection/:id",
-    collection: "/[v1]/:collection",
-    schema: "/[v1]/api_schema",
+    id: "/v1/:collection/:id",
+    collection: "/v1/:collection",
+    schema: "/v1/api_schema",
     auth: {
-        register: "/[auth]/registeUserWithEmailAndPassword",
-        login: "/[auth]/loginWithEmailAndPassword",
-        delete: "/[auth]/deleteEmailAccount",
-        disable: "/[auth]/disableEmailAccount"
+        register: "/auth/registeUserWithEmailAndPassword",
+        login: "/auth/loginWithEmailAndPassword",
+        delete: "/auth/deleteEmailAccount",
+        disable: "/auth/disableEmailAccount"
     }
 };
+Deno.env.get("DENO_DEPLOYMENT_ID") !== undefined;
 class Auth {
     #url;
     token = null;
@@ -123,11 +124,11 @@ class ReactiveDB {
     #__instance__ = true;
     #__filter__ = null;
     #__parse__url;
-    Auth;
-    constructor(connection){
+    #__token__;
+    constructor(connection, token){
         const url = parseURL(connection);
-        this.Auth = new Auth(url.toHttp());
-        this.#__uuid__ = window.crypto.randomUUID();
+        this.#__token__ = token;
+        this.#__uuid__ = token.uuid;
         this.#__parse__url = url;
         this.#__url__ = url.toWs();
         this.#__ws__ = this.#Websocket();
@@ -143,10 +144,21 @@ class ReactiveDB {
             value: "value",
             get: "get"
         };
+        this.#__ws__.addEventListener("close", (e)=>{
+            switch(e.code){
+                case 4999:
+                    throw ClientError(`WS Server Error: ${e.reason}`);
+                case 4004:
+                    throw ClientError(`WS Server: ${e.reason}`);
+                default:
+                    throw ClientError(`WS Server Error: ${e.reason}`);
+            }
+        });
     }
     #Websocket() {
         const url = new URL(this.#__url__);
-        url.searchParams.set("client-uid", this.#__uuid__);
+        url.searchParams.set("x-authorization-token", this.#__token__?.token);
+        url.searchParams.set("x-authorization-uuid", this.#__token__?.uuid ?? "");
         return new WebSocket(url.toString());
     }
     #Send({ to , data  }) {
@@ -321,7 +333,8 @@ class ReactiveDB {
         return mutations;
     }
 }
-function createClient(connection) {
-    return ()=>new ReactiveDB(connection);
+function createClient(connection, token) {
+    return ()=>new ReactiveDB(connection, token);
 }
+export { Auth as Auth };
 export { createClient as createClient };
