@@ -37,6 +37,9 @@ export async function ReactiveCore({
   connection,
   port = 1777,
   secretKey,
+  middlewares,
+  CLSDefinition,
+  mapper,
 }: ReactiveCoreProps) {
   // Run websockets server
   const instance = await server.init({
@@ -44,17 +47,20 @@ export async function ReactiveCore({
     hostname: "0.0.0.0",
     port,
     secretKey,
+    middlewares,
+    CLSDefinition,
+    mapper,
   });
 
   port = cyan(port.toString()) as any as number;
 
-  const message = `ReactiveDB started in http://localhost:${port}`;
+  const message = `ReactiveDB started on port ${port}`;
 
   console.log(
     yellow(`
   ╭────────────────────────────────────────────────────╮
   │                                                    │
-  │    ${message}     │
+  │            ${message}         │
   │                                                    │
   ╰────────────────────────────────────────────────────╯\n`)
   );

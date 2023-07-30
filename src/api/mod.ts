@@ -5,83 +5,35 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import { CommonHeaders } from "../middlewares/headers.ts";
 import { Application } from "../../imports/server_oak.ts";
+import { Websockets } from "../middlewares/websockets.ts";
+import { CLSValidator } from "../middlewares/cls.ts";
+import type { CLSDefinition } from "../cls/mod.ts";
 import * as mongo from "../../imports/mongo.ts";
-import type { JWTPayload } from "../types.ts";
 import { CreateRouter } from "./router.ts";
-import { jwt } from "../../imports/jwt.ts";
 
 export async function Api(
   DB: mongo.Database,
   secretKey: CryptoKey,
-  app: Application
+  app: Application,
+  CLSDefinition: CLSDefinition | null | undefined,
+  mapper?: boolean
 ) {
-  const Router = await CreateRouter(DB, secretKey);
+  const Router = await CreateRouter(DB, secretKey, mapper);
 
-  app.use(async (ctx, next) => {
-    ctx.response.headers.set("Access-Control-Allow-Origin", "*");
-    ctx.response.headers.set(
-      "Access-Control-Allow-Methods",
-      "POST, PUT, GET, OPTIONS"
+  // global headers
+  app.use(CommonHeaders);
+
+  // CLS validator
+  if (CLSDefinition)
+    app.use(
+      async (ctx, next) =>
+        await CLSValidator(ctx, next, CLSDefinition!, secretKey, DB)
     );
 
-    ctx.response.headers.set(
-      "Access-Control-Allow-Headers",
-      "Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With"
-    );
-
-    ctx.response.headers.set("x-powered-by", "ReactiveDB");
-    ctx.response.headers.set("x-deno-version", Deno.version.deno);
-
-    await next();
-  });
-
-  app.use(async (ctx, next) => {
-    // ws token check
-    if (ctx.request.url.pathname === "/[WebSocket]") {
-      const token = ctx.request.url.searchParams.get("x-authorization-token")!;
-
-      try {
-        const payload = (await jwt.verify(
-          token,
-          secretKey
-        )) as unknown as JWTPayload;
-
-        const users = DB.collection("Auth_users");
-
-        const user = await users.findOne({
-          uuid: payload.uuid,
-          email: payload.email,
-        });
-
-        if (user !== undefined) {
-          await next();
-        } else {
-          if (ctx.isUpgradable) {
-            const ws = ctx.upgrade();
-
-            setTimeout(() => ws.close(4004, "User not found"), 100);
-          }
-        }
-      } catch (error) {
-        if (ctx.isUpgradable) {
-          const ws = ctx.upgrade();
-
-          setTimeout(() => ws.close(4999, `${error?.message}`), 100);
-        } else {
-          ctx.response.status = 500;
-          ctx.response.body = {
-            error: true,
-            message: `${error?.message}`,
-          };
-
-          return;
-        }
-      }
-    } else {
-      await next();
-    }
-  });
+  // websockets auth validation
+  app.use(async (ctx, next) => await Websockets(ctx, next, secretKey, DB));
 
   app.use(Router.allowedMethods());
   app.use(Router.routes());

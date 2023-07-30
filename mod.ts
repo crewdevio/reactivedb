@@ -7,4 +7,5 @@
 
 export * from "./src/core/mod.ts";
 export * from "./src/api/mod.ts";
+export * from "./src/cls/mod.ts";
 export * from "./src/types.ts";

@@ -4,7 +4,7 @@ const url = "http://localhost:8080";
 
 const auth = new Auth(url);
 const token = await auth.loginWithEmailAndPassword(
-  "erick@open.com",
+  "erick2@open.com",
   "12345678"
 );
 

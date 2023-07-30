@@ -12,6 +12,7 @@ import type {
   Context as OakContext,
 } from "../imports/server_oak.ts";
 import type { Database as DB } from "../imports/mongo.ts";
+import type { CLSDefinition } from "./cls/mod.ts";
 import { MongoClient } from "../imports/mongo.ts";
 import { Packet } from "./server/mod.ts";
 
@@ -34,6 +35,8 @@ export interface ReactiveCoreProps {
   port?: number;
   secretKey: CryptoKey;
   middlewares?: Middleware[];
+  CLSDefinition?: CLSDefinition;
+  mapper?: boolean;
 }
 
 export interface IPacket extends Packet {
@@ -130,3 +133,11 @@ export interface JWTPayload {
   email: string;
   uuid: string;
 }
+
+export type ExtractParam<Path, NextPart> = Path extends `:${infer Param}`
+  ? Record<Param, string> & NextPart
+  : NextPart;
+
+export type ExctractParams<Path> = Path extends `${infer Segment}/${infer Rest}`
+  ? ExtractParam<Segment, ExctractParams<Rest>>
+  : ExtractParam<Path, {}>;

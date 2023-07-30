@@ -2,9 +2,10 @@ import type {
   ListenOptionsBase,
   ListenOptionsTls,
 } from "../../../../imports/server_oak.ts";
+import type { DataBaseProps, Middleware } from "../../../types.ts";
 import { Application } from "../../../../imports/server_oak.ts";
 import { StartDataBase } from "../../../database/mod.ts";
-import type { DataBaseProps } from "../../../types.ts";
+import type { CLSDefinition } from "../../../cls/mod.ts";
 import { ITransmitterOptions } from "./interfaces.ts";
 import * as mongo from "../../../../imports/mongo.ts";
 import { EventEmitter } from "./event_emitter.ts";
@@ -16,11 +17,17 @@ import { Packet } from "./packet.ts";
 interface RunOptionsTLS extends ListenOptionsTls {
   database: string | DataBaseProps;
   secretKey: CryptoKey;
+  middlewares?: Middleware[];
+  CLSDefinition?: CLSDefinition;
+  mapper?: boolean;
 }
 
 interface RunOptions extends ListenOptionsBase {
   database: string | DataBaseProps;
   secretKey: CryptoKey;
+  middlewares?: Middleware[];
+  CLSDefinition?: CLSDefinition;
+  mapper?: boolean;
 }
 
 /**
@@ -56,6 +63,8 @@ export class Server extends EventEmitter {
 
   public Database: mongo.Database | null = null;
 
+  private CLSDefinitions: CLSDefinition | null | undefined = null;
+
   //////////////////////////////////////////////////////////////////////////////
   // FILE MARKER - CONSTRUCTOR /////////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////////////
@@ -71,6 +80,7 @@ export class Server extends EventEmitter {
     this.AbortController = new AbortController();
     this.oak_server = new Application();
     this.database_connection = "";
+    this.CLSDefinitions = null;
   }
 
   //////////////////////////////////////////////////////////////////////////////
@@ -98,6 +108,7 @@ export class Server extends EventEmitter {
     DB: mongo.Database;
   }> {
     this.database_connection = options.database;
+    this.CLSDefinitions = options.CLSDefinition;
 
     const { Database } = (await StartDataBase(this.database_connection))!;
 
@@ -105,7 +116,14 @@ export class Server extends EventEmitter {
     this.Database = Database;
     this.options = options;
 
-    await Api(this.Database, this.secretKey, this.oak_server);
+    await Api(
+      this.Database,
+      this.secretKey,
+      this.oak_server,
+      this.CLSDefinitions,
+      this.options.mapper
+    );
+
     await this.acceptWebSockets();
 
     return {
