@@ -1,5 +1,5 @@
 {
   "scripts": {
-    "start": "deno run -A --unstable --no-check ./main.ts"
+    "start": "deno run -A --unstable --check --reload ./main.ts"
   }
 }
