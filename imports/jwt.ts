@@ -1,1 +1,1 @@
-export * as jwt from "https://deno.land/x/djwt@v2.9.1/mod.ts";
+export * as jwt from "https://deno.land/x/djwt@v3.0.1/mod.ts";

@@ -1,14 +1,16 @@
-## ReactiveDB realtime database/backend for mongodb (will support postgres, and DenoKV in the future) heavy inspired on firebase, pocketbase and supabase
+# ReactiveDB realtime database/backend
 
-## (READ) The documentation is still under development so not all the functionalities of reactivedb are yet documented.
+for mongodb (will support postgres, and DenoKV in the future) heavy inspired on firebase, pocketbase and supabase
+
+> (READ) The documentation is still under development so not all the functionalities of reactivedb are yet documented.
 
 > History: The idea of ReactiveDB was born at the beginning of 2020 while I was working for a software company, the project I was in needed to have data synchronization between multiple users, originally we built everything around firebase which worked perfectly, but for client requirements it was necessary to have the entire infrastructure running on my own servers locally, so I was faced with the task of thinking of a solution that would meet these requirements and at the same time allow us not to have to change everything that was already closely coupled to the design from firebase, so ReactiveDB was born from here.
 
-### Original diagram
+## Original diagram
 
 ![original diagram](./static/original-diagram.png)
 
-### So what is ReactiveDB?
+## So what is ReactiveDB?
 
 ReactiveDB aims, like firebase, supabase, poketbase, to provide a fast backend structure and listen to the changes that occur in the database in real time, but ReactiveDB takes the idea of being a framework/library which makes it easy to integrate it into a project already running or also start a project from scratch.
 
@@ -111,3 +113,175 @@ PUT, PATCH: http://localhost:8080/v1/Users/12345 '{ "name": "Jhon Smith", "passw
 ```
 
 This rest api is automatic for all collections within the database, using the api automatically sends a notification to clients that are listening for changes.
+
+## The basics
+
+### How to start?
+
+first install ReactiveDB:
+
+```ts
+import { ReactiveCore } from "https://deno.land/x/reactivedb/mod.ts";
+```
+
+or using Trex
+
+```console
+trex install reactivedb
+```
+
+now create a database on mongodb atlas or use a local mongodb server:
+
+```ts
+import { ReactiveCore, Crypto } from "https://deno.land/x/reactivedb/mod.ts";
+import { load } from "https://deno.land/std/dotenv/mod.ts";
+
+// load envs - we strongly recommend using environment variables
+const {
+  REACTIVE_USERNAME_DB,
+  REACTIVE_PASSWORD_DB,
+  REACTIVEE_HOST_DB,
+  REACTIVE_DB_NAME,
+  REACTIVE_DB_PORT,
+  REACTIVE_SERVER_PORT,
+  REACTIVE_JWK_BASE_64,
+} = await load();
+```
+
+then generate a secure CryptoKey:
+
+```ts
+import { Crypto } from "https://deno.land/x/reactivedb/mod.ts";
+
+const crypto = new Crypto({ name: "HMAC", hash: "SHA-512" }, true, [
+  "sign",
+  "verify",
+]);
+
+await crypto.generateKey();
+
+const { toBase64 } = await crypto.exportToJWKBase64();
+
+console.log(toBase64()); // eyJrdHkiOiJvY3QiLCJrIjoib040ek5FRmhrVEdkaWJTdHpOMTZwZ1.....
+```
+
+We recommend saving this token in an environment variable and not sharing it since the token is used to sign and verify JWTs.
+
+`.env`
+
+```env
+REACTIVE_JWK_BASE_64="eyJrdHkiOiJvY3QiLCJrIjoib040ek5FRmhrVEdkaWJTdHpOMTZwZ1....."
+```
+
+> **Note:** Each CryptoKey is unique, so if it is changed to a new one, it will not be possible to verify the tokens created with the previous CryptoKey.
+
+now load the CryptoKey:
+
+```ts
+import { ReactiveCore, Crypto } from "https://deno.land/x/reactivedb/mod.ts";
+import { load } from "https://deno.land/std/dotenv/mod.ts";
+
+// load envs
+const {
+  REACTIVE_USERNAME_DB,
+  REACTIVE_PASSWORD_DB,
+  REACTIVEE_HOST_DB,
+  REACTIVE_DB_NAME,
+  REACTIVE_DB_PORT,
+  REACTIVE_SERVER_PORT,
+  REACTIVE_JWK_BASE_64,
+} = await load();
+
+const crypt = new Crypto({ name: "HMAC", hash: "SHA-512" }, true, [
+  "sign",
+  "verify",
+]);
+
+// load the CryptoKey from previous step
+const secretKey = await crypt.importFromJWKBase64(REACTIVE_JWK_BASE_64);
+
+// start reactivedb
+await ReactiveCore({
+  connection: {
+    host: REACTIVEE_HOST_DB,
+    db: REACTIVE_DB_NAME,
+    port: Number(REACTIVE_DB_PORT),
+    tls: true,
+    credential: {
+      username: REACTIVE_USERNAME_DB,
+      password: REACTIVE_PASSWORD_DB,
+    },
+  }, // or connection: "mongodb://localhost:27017/myDatabase"
+  port: Number(REACTIVE_SERVER_PORT),
+  secretKey,
+});
+```
+
+## Advanced concepts
+
+### ReactiveDB Functions
+
+with ReactiveDB you can create your own endpoints called "Functions" these endpoints are structured using file system routing.
+
+To create functions you just have to create a "functions" folder at the root of the project.
+
+`functions/`
+
+This is the anatomy of a reactive db function:
+
+`functions/users.[get].ts`
+
+- users: the name of the `endpoint/function` -> http://localhost:8080/users, `index` name is transformed to `/`
+
+- [ get ] : the http methods supported by the `endpoint/function` -> all methods supported: get, post, put, delete, all.
+  You can combine several methods for the same function: `users.[get,post,put].ts` or allow all methods `users.[all].ts`
+- `.ts` -> file extension, supported file extensions: ts, js, tsx, jsx
+
+Inside of the function looks like this:
+
+`functions/user.[get].ts`
+
+```ts
+import type {
+  Context,
+  Utilities,
+  Middleware,
+} from "https://deno.land/x/reactivedb/mod.ts";
+import {
+  Handler,
+  HandlerMiddlewares,
+} from "https://deno.land/x/reactivedb/mod.ts";
+
+// middlewares for this function
+export const middlewares = HandlerMiddlewares([
+  async (ctx, next) => {
+    console.log(ctx.request.ip);
+
+    await next();
+  },
+]);
+
+// function
+export default async function Index(context: Context, utils: Utilities) {
+  try {
+    const cursor = await utils.Database.collection("Users");
+
+    const results = await cursor
+      .find(undefined, { noCursorTimeout: false })
+      .toArray();
+
+    utils.Events.post({
+      to: "Users",
+      data: [],
+      event: "child_added",
+    });
+
+    context.response.status = 200;
+    context.response.body = results;
+  } catch (error) {
+    console.log(error);
+  }
+}
+```
+
+Now we will explain each part:
