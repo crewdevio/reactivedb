@@ -1,8 +1,8 @@
 # ReactiveDB realtime database/backend
 
-for mongodb (will support postgres, and DenoKV in the future) heavy inspired on firebase, pocketbase and supabase
+for mongodb (will support postgres, and DenoKV in the future) heavy inspired on firebase, pocketbase and supabase.
 
-> (READ) The documentation is still under development so not all the functionalities of reactivedb are yet documented.
+> (READ): The documentation is still under development so not all the functionalities of reactivedb are yet documented.
 
 > History: The idea of ReactiveDB was born at the beginning of 2020 while I was working for a software company, the project I was in needed to have data synchronization between multiple users, originally we built everything around firebase which worked perfectly, but for client requirements it was necessary to have the entire infrastructure running on my own servers locally, so I was faced with the task of thinking of a solution that would meet these requirements and at the same time allow us not to have to change everything that was already closely coupled to the design from firebase, so ReactiveDB was born from here.
 
@@ -285,3 +285,95 @@ export default async function Index(context: Context, utils: Utilities) {
 ```
 
 Now we will explain each part:
+
+> **Note**: You can only export a single function per file and it must be exported by default:
+
+```ts
+export default async function Fn() {
+  ....
+}
+```
+
+Each function receives two parameters: `Context` and `Utilities`:
+
+- `Context`: In the context are the `Response` and the `Request` of each http request, reactivedb is built on top of the Oak framework so it is managed like any app made in [Oak](https://deno.land/x/oak/mod.ts?s=Context)
+
+```ts
+export default async function Fn(context: Context) {
+  const body = context.request.body({ type: "json" });
+
+  context.response.status = 200;
+  context.response.body = {
+    ok: true,
+  };
+}
+```
+
+- `Utilities`: The utilities contain the connection to the database to make queries and add data to the collections. They also contain the method to dispatch events for the websocket connections that are listening.
+
+```ts
+export default async function Fn(context: Context, utils: Utilities) {
+  try {
+    // connect to Users collection
+    const cursor = await utils.Database.collection("Users");
+
+    // get all users from Users collection
+    const results = await cursor
+      .find(undefined, { noCursorTimeout: false })
+      .toArray();
+
+    // send to Users listeners
+    utils.Events.post({
+      to: "Users",
+      data: [],
+      event: "child_added",
+    });
+
+    context.response.status = 200;
+    context.response.body = {
+      ok: true,
+    };
+  } catch (error) {
+    console.log(error);
+  }
+}
+```
+
+#### Middlewares
+
+The functions support middlewares, so you can define all the middlewares you need in each function.
+
+```ts
+// middlewares list
+export const middlewares = HandlerMiddlewares([
+  async (ctx, next) => {
+    console.log(ctx.request.ip);
+
+    await next();
+  },
+]);
+
+export default async function Fn(context: Context, utils: Utilities) {
+  ....
+}
+```
+
+It is important that the next function is called in each middleware, since if it is not done, the execution will not continue to the other middlewares and towards the function.
+
+```ts
+export const middlewares = HandlerMiddlewares([
+  async (ctx, next) => {
+    console.log(ctx.request.ip);
+
+    await next(); // call it always
+  },
+]);
+```
+
+> **Note**: You must always export with the name `middlewares` so that the middlewares are loaded before the execution of the function.
+
+```ts
+export const middlewares = HandlerMiddlewares([
+  ....
+]);
+```
