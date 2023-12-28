@@ -111,7 +111,7 @@ export function filterData(path: string) {
 export const Routes = {
   id: "/v1/:collection/:id",
   collection: "/v1/:collection",
-  schema: "/v1/api_schema",
+  schema: "/v1/functions_schema",
   auth: {
     register: "/auth/registeUserWithEmailAndPassword",
     login: "/auth/loginWithEmailAndPassword",

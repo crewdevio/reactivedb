@@ -138,7 +138,7 @@ export async function CreateRouter(
     },
     async ({ request, response, params }) => {
       try {
-        if (decodeURIComponent(request.url.pathname) === "/[v1]/*") {
+        if (decodeURIComponent(request.url.pathname) === "/v1/*") {
           const collections = await DB.listCollectionNames();
 
           response.status = 200;
@@ -342,9 +342,11 @@ export async function CreateRouter(
 
   router.post(
     Routes.auth.register,
-    async (ctx, next) => {
-      await AuthToken(ctx, next, secretKey, DB);
-    },
+
+    //! enable later
+    // async (ctx, next) => {
+    //   await AuthToken(ctx, next, secretKey, DB);
+    // },
     async ({ response, request }) => {
       const users = DB.collection("Auth_users");
 
