@@ -5,16 +5,17 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { Routes, transform, IS_DENO_DEPLOY } from "../shared/utils.ts";
+import { Routes, transform, IS_DENO_DEPLOY, exists } from "../shared/utils.ts";
+import { encodeHex, encode } from "../../imports/encoding.ts";
 import { handleFiles } from "../core/funtions_runtime.ts";
 import { Router } from "../../imports/server_oak.ts";
-import { createHash } from "../../imports/hash.ts";
 import { AuthToken } from "../middlewares/auth.ts";
-import { exists, walk } from "../../imports/fs.ts";
 import { reactiveEvents } from "../core/events.ts";
+import { crypto } from "../../imports/cripto.ts";
 import * as mongo from "../../imports/mongo.ts";
 import { generate } from "../libs/uuid/v4.js";
 import { join } from "../../imports/path.ts";
+import { walk } from "../../imports/fs.ts";
 import { jwt } from "../../imports/jwt.ts";
 import { Bson } from "../database/mod.ts";
 
@@ -172,9 +173,9 @@ export async function CreateRouter(
     async ({ response, request, params }) => {
       try {
         const collection = params?.collection!;
-        const body = request.body({ type: "json" });
+        const body = request.body;
 
-        const requestData = await body.value;
+        const requestData = await body.json();
         const query = DB.collection(collection);
 
         const added = await query.insertOne(requestData);
@@ -257,8 +258,8 @@ export async function CreateRouter(
       const collection = params?.collection!;
       const id = params?.id!;
 
-      const body = request.body({ type: "json" });
-      const { _id, ...newData } = await body.value;
+      const body = request.body;
+      const { _id, ...newData } = await body.json();
 
       const query = DB.collection(collection);
       const finded = await query.findOne(
@@ -302,8 +303,8 @@ export async function CreateRouter(
       const collection = params?.collection!;
       const id = params?.id!;
 
-      const body = request.body({ type: "json" });
-      const { _id, ...newData } = await body.value;
+      const body = request.body;
+      const { _id, ...newData } = await body.json();
 
       const query = DB.collection(collection);
       const finded = await query.findOne(
@@ -350,13 +351,18 @@ export async function CreateRouter(
     async ({ response, request }) => {
       const users = DB.collection("Auth_users");
 
-      const body = request.body({ type: "json" });
-      const { email, password } = await body.value;
+      const body = request.body;
+      const { email, password } = await body.json();
 
       const finded = await users.findOne({ email }, { noCursorTimeout: false });
-      const encryptedPassword = createHash("sha512")
-        .update(password.toString())
-        .toString();
+
+      const hash = await crypto.subtle.digest(
+        "SHA-512",
+        encode(password.toString())
+      );
+
+      // Hex encoding
+      const encryptedPassword = encodeHex(hash);
 
       const uuid = generate();
 
@@ -392,12 +398,16 @@ export async function CreateRouter(
     try {
       const users = DB.collection("Auth_users");
 
-      const body = request.body({ type: "json" });
-      const { email, password } = await body.value;
+      const body = request.body;
+      const { email, password } = await body.json();
 
-      const userPassword = createHash("sha512")
-        .update(password.toString())
-        .toString();
+      const hash = await crypto.subtle.digest(
+        "SHA-512",
+        encode(password.toString())
+      );
+
+      // Hex encoding
+      const userPassword = encodeHex(hash);
 
       const finded = await users.findOne({ email });
 
@@ -446,8 +456,9 @@ export async function CreateRouter(
     },
     async ({ request, response }) => {
       const users = DB.collection("Auth_users");
-      const body = request.body({ type: "json" });
-      const { uuid } = await body.value;
+      const body = request.body;
+
+      const { uuid } = await body.json();
 
       const finded = (await users.findOne({ uuid })) as any;
 
@@ -470,8 +481,9 @@ export async function CreateRouter(
     },
     async ({ request, response }) => {
       const users = DB.collection("Auth_users");
-      const body = request.body({ type: "json" });
-      const { uuid, active } = await body.value;
+
+      const body = request.body;
+      const { uuid, active } = await body.json();
 
       const finded = (await users.findOne({ uuid })) as any;
 

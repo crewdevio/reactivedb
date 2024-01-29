@@ -1,8 +1,8 @@
 import type { Context, Utilities } from "../../../../mod.ts";
 
 export default async function Users(context: Context, utils: Utilities) {
-  const body = context.request.body({ type: "json" });
-  const { uuid } = await body.value;
+  const body = context.request.body;
+  const { uuid } = await body.json();
 
   const db = await utils.Database.collection("users");
 

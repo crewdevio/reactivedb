@@ -2,6 +2,7 @@
 
 for mongodb (will support postgres, and DenoKV in the future) heavy inspired on firebase, pocketbase and supabase.
 
+> [!IMPORTANT]
 > (READ): The documentation is still under development so not all the functionalities of reactivedb are yet documented.
 
 > History: The idea of ReactiveDB was born at the beginning of 2020 while I was working for a software company, the project I was in needed to have data synchronization between multiple users, originally we built everything around firebase which worked perfectly, but for client requirements it was necessary to have the entire infrastructure running on my own servers locally, so I was faced with the task of thinking of a solution that would meet these requirements and at the same time allow us not to have to change everything that was already closely coupled to the design from firebase, so ReactiveDB was born from here.
@@ -376,4 +377,152 @@ export const middlewares = HandlerMiddlewares([
 export const middlewares = HandlerMiddlewares([
   ....
 ]);
+```
+
+#### Collection Level Security (CLS)
+
+ReactiveDB implements a simple mechanism to write rules that protect database writes and reads, these rules are heavily inspired by [Cloud Firestore Security Rules](https://firebase.google.com/docs/firestore/security/get-started?hl=en) and [Row Level Security Supabase](https://supabase.com/docs/guides/auth/row-level-security)
+
+CLS allows you to create detailed rules for reading, writing, updating and deleting objects in collections.
+
+> example
+
+```ts
+import { ReactiveCore, CLSBuilder } from "https://deno.land/x/reactivedb/mod.ts";
+
+....
+
+const rules = CLSBuilder(() => ({
+  "/:collection/:id": (params, db, context) => {
+    return {
+      async read() {
+        // match and get rule params
+        const { id, collection } = params<"/:collection/:id">();
+
+        const items = db.collection(collection);
+
+        const doc = await items.findOne({ _id: new Bson.ObjectId(id) })!;
+        // get user
+        const userReq = await items.findOne({ uuid: context.uuid })!;
+
+        const { uuid } = context;
+
+        if (!userReq) {
+          // disallow read if not exist this user
+          return false;
+        }
+
+        return true;
+      },
+      write() {
+        return {
+          create() {
+            // allow to create
+            return true;
+          },
+          delete() {
+            return false;
+          },
+          update() {
+            return false;
+          },
+        };
+      },
+    };
+  },
+}));
+
+....
+
+await ReactiveCore({
+  connection: {
+    host: REACTIVEE_HOST_DB,
+    db: REACTIVE_DB_NAME,
+    port: Number(REACTIVE_DB_PORT),
+    tls: true,
+    credential: {
+      username: REACTIVE_USERNAME_DB,
+      password: REACTIVE_PASSWORD_DB,
+    },
+  },
+  port: Number(REACTIVE_SERVER_PORT),
+  secretKey,
+  CLSDefinition: rules, // pass rules to ReactiveDB core
+  mapper: true,
+});
+```
+
+> **Note**: Security rules do not apply to the websockets(for now) connection, they only apply to HTTP API(v1)
+
+you can create all the rules you want to catch all the conditions you need.
+
+These are all the tools that are available to define the rules:
+
+- `params`: the parameters of the route to intercept, you can pass the route to match to the function in the form of a generic type, so that it is typed and returns the parameters the same as the route.
+
+```ts
+const { id, collection } = params<"/:collection/:id">();
+        ^^      ^^-----------------------^^      ^^
+        |                                        |
+        ------------------------------------------
+```
+
+- `db`: contain the connection to the database to make queries.
+
+```ts
+const items = db.collection(collection);
+
+const doc = await items.findOne({ _id: new Bson.ObjectId(id) })!;
+```
+
+- `context`: contains the information of the user who is accessing the database.
+
+```ts
+context; // { uuid: string; email: string; auth: boolean; }
+```
+
+Write rules allow you to create individual rules to update, create, and delete data. but if you want you can make a single global rule for writing.
+
+```ts
+write() {
+  return {
+    create() {
+      return true;
+    },
+    delete() {
+      return false;
+    },
+    update() {
+      return false;
+    },
+  };
+}
+
+// or
+
+write() {
+  return true;
+}
+```
+
+The read function can be asynchronous or not, but it must always return a boolean data:
+
+```ts
+read(): Promise<boolean> | boolean;
+```
+
+For the write function, the function itself can be asynchronous or not, but it always has to return either a boolean data or a definition of write, update, delete:
+
+```ts
+write(): Promise<boolean> | Promise<WriteDefinition> | boolean | WriteDefinition;
+```
+
+for write functions for writes these may or may not be asynchronous but must always return a boolean value:
+
+```ts
+create(): Promise<boolean> | boolean;
+
+delete(): Promise<boolean> | boolean;
+
+update(): Promise<boolean> | boolean;
 ```

@@ -121,3 +121,34 @@ export const Routes = {
 };
 
 export const IS_DENO_DEPLOY = Deno.env.get("DENO_DEPLOYMENT_ID") !== undefined;
+
+/**
+ * Test whether or not the given path exists by checking with the file system
+ */
+export async function exists(filePath: string): Promise<boolean> {
+  try {
+    await Deno.lstat(filePath);
+    return true;
+  } catch (err) {
+    if (err instanceof Deno.errors.NotFound) {
+      return false;
+    }
+
+    throw err;
+  }
+}
+
+/**
+ * Test whether or not the given path exists by checking with the file system
+ */
+export function existsSync(filePath: string): boolean {
+  try {
+    Deno.lstatSync(filePath);
+    return true;
+  } catch (err) {
+    if (err instanceof Deno.errors.NotFound) {
+      return false;
+    }
+    throw err;
+  }
+}
