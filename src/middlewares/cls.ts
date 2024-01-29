@@ -26,7 +26,7 @@ const validateWriteAction = async (
         ctx.response.status = 401;
         ctx.response.body = {
           error: true,
-          message: `CLS Error: not authorize write`,
+          message: `CLS Error: not authorize to write`,
         };
 
         return true;
@@ -42,7 +42,7 @@ const validateWriteAction = async (
         ctx.response.status = 401;
         ctx.response.body = {
           error: true,
-          message: `CLS Error: not authorize update`,
+          message: `CLS Error: not authorize to update`,
         };
 
         return true;
@@ -57,7 +57,7 @@ const validateWriteAction = async (
         ctx.response.status = 401;
         ctx.response.body = {
           error: true,
-          message: `CLS Error: not authorize delete`,
+          message: `CLS Error: not authorize to delete`,
         };
 
         return true;
@@ -139,7 +139,7 @@ export async function CLSValidator(
             ctx.response.status = 401;
             ctx.response.body = {
               error: true,
-              message: `CLS Error: not authorize update, write or delete`,
+              message: `CLS Error: not authorize to update, write or delete`,
             };
 
             return;

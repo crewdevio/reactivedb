@@ -379,7 +379,7 @@ export const middlewares = HandlerMiddlewares([
 ]);
 ```
 
-#### Collection Level Security (CLS)
+### Collection Level Security (CLS)
 
 ReactiveDB implements a simple mechanism to write rules that protect database writes and reads, these rules are heavily inspired by [Cloud Firestore Security Rules](https://firebase.google.com/docs/firestore/security/get-started?hl=en) and [Row Level Security Supabase](https://supabase.com/docs/guides/auth/row-level-security)
 
