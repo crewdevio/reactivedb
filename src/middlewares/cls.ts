@@ -1,5 +1,6 @@
-import type { Context, Next } from "../../imports/server_oak.ts";
+import type { Context, Next, HTTPMethods } from "../../imports/server_oak.ts";
 import { matchPath } from "https://esm.sh/react-router@5.3.4";
+import type { WriteMethods } from "./../cls/mod.ts";
 import type { CLSDefinition } from "../cls/mod.ts";
 import * as mongo from "../../imports/mongo.ts";
 import type { JWTPayload } from "../types.ts";
@@ -7,6 +8,64 @@ import { jwt } from "../../imports/jwt.ts";
 
 const isWriteMethod = (method: string) =>
   ["DELETE", "POST", "PUT", "PATCH"].includes(method);
+
+const isWriteRules = (rule: unknown) => typeof rule === "object";
+
+const validateWriteAction = async (
+  ctx: Context,
+  next: Next,
+  method: HTTPMethods,
+  writeMethods: WriteMethods
+): Promise<void | boolean> => {
+  switch (method) {
+    // create check
+    case "POST":
+      if (writeMethods.create()) {
+        await next();
+      } else {
+        ctx.response.status = 401;
+        ctx.response.body = {
+          error: true,
+          message: `CLS Error: not authorize write`,
+        };
+
+        return true;
+      }
+      break;
+
+    // update check
+    case "PUT":
+    case "PATCH":
+      if (writeMethods.update()) {
+        await next();
+      } else {
+        ctx.response.status = 401;
+        ctx.response.body = {
+          error: true,
+          message: `CLS Error: not authorize update`,
+        };
+
+        return true;
+      }
+      break;
+
+    // delete check
+    case "DELETE":
+      if (writeMethods.delete()) {
+        await next();
+      } else {
+        ctx.response.status = 401;
+        ctx.response.body = {
+          error: true,
+          message: `CLS Error: not authorize delete`,
+        };
+
+        return true;
+      }
+
+      break;
+  }
+};
 
 const match = (path: string, ctx: Context) =>
   matchPath(ctx.request.url.pathname, {
@@ -56,7 +115,7 @@ export async function CLSValidator(
           ctx.response.status = 401;
           ctx.response.body = {
             error: true,
-            message: `CLS Error: not authorize`,
+            message: `CLS Error: not authorize to read`,
           };
 
           return;
@@ -64,16 +123,27 @@ export async function CLSValidator(
       } else if (isWriteMethod(ctx.request.method)) {
         const rule = await write?.()!;
 
-        if (rule) {
-          await next();
-        } else {
-          ctx.response.status = 401;
-          ctx.response.body = {
-            error: true,
-            message: `CLS Error: not authorize`,
-          };
+        if (isWriteRules(rule)) {
+          const out = await validateWriteAction(
+            ctx,
+            next,
+            ctx.request.method,
+            rule as WriteMethods
+          );
 
-          return;
+          if (out) return;
+        } else {
+          if (rule) {
+            await next();
+          } else {
+            ctx.response.status = 401;
+            ctx.response.body = {
+              error: true,
+              message: `CLS Error: not authorize update, write or delete`,
+            };
+
+            return;
+          }
         }
       }
     }

@@ -1,7 +1,7 @@
 import { ReactiveCore, Crypto, CLSBuilder } from "../../mod.ts";
 import { Bson } from "../../imports/mongo.ts";
 import { load } from "../../imports/env.ts";
-import "./rdb_mapper.ts";
+// import "./rdb_mapper.ts";
 
 // load envs
 const {
@@ -22,45 +22,10 @@ const crypt = new Crypto({ name: "HMAC", hash: "SHA-512" }, true, [
 const secretKey = await crypt.importFromJWKBase64(REACTIVE_JWK_BASE_64);
 
 const rules = CLSBuilder(() => ({
-  "/users/:id": (params, db, context) => {
-    return {
-      async read() {
-        const { id } = params<"/users/:id">();
-
-        const items = db.collection("users");
-
-        const doc = await items.findOne({ _id: id })!;
-        const userReq = await items.findOne({ uuid: context.uuid })!;
-
-        const { uuid } = context;
-
-        if (uuid === doc?.uuid || userReq?.isAdmin) {
-          return true;
-        }
-
-        return false;
-      },
-      write() {
-        return {
-          create() {
-            return true;
-          },
-          delete() {
-            return true;
-          },
-          update() {
-            return true;
-          },
-        };
-      },
-    };
-  },
   "/:collection/:id": (params, db, context) => {
     return {
       async read() {
         const { id, collection } = params<"/:collection/:id">();
-
-        // console.log({ params, context, db });s
 
         const items = db.collection(collection);
 
@@ -69,57 +34,22 @@ const rules = CLSBuilder(() => ({
 
         const { uuid } = context;
 
-        console.log({ uuid, id });
-
         if (doc) {
-          return false;
-        }
-
-        return false;
-      },
-      write() {
-        return {
-          create() {
-            return true;
-          },
-          delete() {
-            return true;
-          },
-          update() {
-            return true;
-          },
-        };
-      },
-    };
-  },
-  "/producs/": (params, db, context) => {
-    return {
-      async read() {
-        const { id } = params<"/users/:id">();
-
-        const items = db.collection("users");
-
-        const doc = await items.findOne({ _id: id })!;
-        const userReq = await items.findOne({ uuid: context.uuid })!;
-
-        const { uuid } = context;
-
-        if (uuid === doc?.uuid || userReq?.isAdmin) {
           return true;
         }
 
-        return false;
+        return true;
       },
       write() {
         return {
           create() {
-            return true;
+            return false;
           },
           delete() {
-            return true;
+            return false;
           },
           update() {
-            return true;
+            return false;
           },
         };
       },

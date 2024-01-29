@@ -4,13 +4,13 @@ import { join } from "../../imports/path.ts";
 
 type RuleResponse<T extends boolean = boolean> = Promise<T> | T;
 
-interface WriteMethods {
+export interface WriteMethods {
   update: () => RuleResponse;
   delete: () => RuleResponse;
   create: () => RuleResponse;
 }
 
-type WriteResponse = WriteMethods | boolean;
+export type WriteResponse = WriteMethods | boolean;
 
 export interface CLSDefinition {
   [key: string]: (
