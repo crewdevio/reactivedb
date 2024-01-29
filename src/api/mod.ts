@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { CommonHeaders } from "../middlewares/headers.ts";
+import { CommonHeaders, SettingCors } from "../middlewares/headers.ts";
 import { Application } from "../../imports/server_oak.ts";
 import { Websockets } from "../middlewares/websockets.ts";
 import { CLSValidator } from "../middlewares/cls.ts";
@@ -29,6 +29,9 @@ export async function Api(
 
   // global headers
   app.use(CommonHeaders);
+
+  // cors headers
+  app.use(SettingCors);
 
   // CLS validator
   if (CLSDefinition)

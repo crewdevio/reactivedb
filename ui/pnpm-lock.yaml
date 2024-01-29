@@ -4,6 +4,11 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+dependencies:
+  universal-cookie:
+    specifier: ^6.1.1
+    version: 6.1.1
+
 devDependencies:
   '@codemirror/autocomplete':
     specifier: ^6.0.0
@@ -519,6 +524,10 @@ packages:
       - supports-color
     dev: true
 
+  /@types/cookie@0.5.4:
+    resolution: {integrity: sha512-7z/eR6O859gyWIAjuvBWFzNURmf2oPBmJlfVWkwehU5nzIyjwBsTh7WMmEEV4JFnHuQ3ex4oyTvfKzcyJVDBNA==}
+    dev: false
+
   /@types/estree@1.0.5:
     resolution: {integrity: sha512-/kYRxGDLWzHOB7q+wtSUQlFrtcdUccpfy+X+9iMBpHK8QLLhx2wIPYuS5DYtR9Wa/YlZAbIovy7qVdB1Aq6Lyw==}
     dev: true
@@ -599,6 +608,11 @@ packages:
       estree-walker: 3.0.3
       periscopic: 3.1.0
     dev: true
+
+  /cookie@0.5.0:
+    resolution: {integrity: sha512-YZ3GUyn/o8gfKJlnlX7g7xq4gyO6OSuhGPKaaGssGB2qgDUS0gPgtTvoyZLTt9Ab6dC4hfc9dV5arkvc/OCmrw==}
+    engines: {node: '>= 0.6'}
+    dev: false
 
   /crelt@1.0.6:
     resolution: {integrity: sha512-VQ2MBenTq1fWZUH9DJNGti7kKv6EeAuYr3cLwxUWhIu1baTaXh4Ib5W2CqHVqib4/MqbYGJqiL3Zb8GJZr3l4g==}
@@ -893,6 +907,13 @@ packages:
     dependencies:
       is-number: 7.0.0
     dev: true
+
+  /universal-cookie@6.1.1:
+    resolution: {integrity: sha512-33S9x3CpdUnnjwTNs2Fgc41WGve2tdLtvaK2kPSbZRc5pGpz2vQFbRWMxlATsxNNe/Cy8SzmnmbuBM85jpZPtA==}
+    dependencies:
+      '@types/cookie': 0.5.4
+      cookie: 0.5.0
+    dev: false
 
   /vite@4.5.1(sass@1.69.5):
     resolution: {integrity: sha512-AXXFaAJ8yebyqzoNB9fu2pHoo/nWX+xZlaRwoeYUxEqBO+Zj4msE5G+BhGBll9lYEKv9Hfks52PAF2X7qDYXQA==}
