@@ -152,8 +152,13 @@ export class Server extends EventEmitter {
       if (ctx.request.url.pathname === "/[WebSocket]") {
         if (ctx.isUpgradable) {
           const ws = ctx.upgrade();
-          const id = ctx.request.url.searchParams.get("x-authorization-uuid")!;
 
+          const clientUuid = ctx.request.url.searchParams.get("x-client-uuid")!;
+          const uuid = ctx.request.url.searchParams.get(
+            "x-authorization-uuid"
+          )!;
+
+          const id = `${uuid}@${clientUuid}`;
           const client = super.createClient(id, ws);
 
           ws.addEventListener("open", async () => {
@@ -278,7 +283,9 @@ export class Server extends EventEmitter {
         json.connect_to.forEach((channelName: string) => {
           try {
             super.addClientToChannel(channelName, client.id);
-            client.socket.send(`Connected to ${channelName}.`);
+            client.socket.send(
+              `{"event": "connected": "from": "${channelName}"}`
+            );
           } catch (error) {
             client.socket.send(error.message);
           }
@@ -298,7 +305,9 @@ export class Server extends EventEmitter {
         json.disconnect_from.forEach((channelName: string) => {
           try {
             super.removeClientFromChannel(channelName, client.id);
-            client.socket.send(`Disconnected from ${channelName}.`);
+            client.socket.send(
+              `{"event": "disconnected": "from": "${channelName}"}`
+            );
           } catch (error) {
             client.socket.send(error.message);
           }

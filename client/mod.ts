@@ -6,14 +6,14 @@
  */
 
 import type { ReactiveEvents } from "../src/types.ts";
+import { generate } from "../src/libs/uuid/v4.js";
 import { Routes } from "../src/shared/utils.ts";
 import type { Token } from "./auth/mod.ts";
 import { Auth } from "./auth/mod.ts";
 import { parseURL } from "./util.ts";
 
 const validStream = (stream: string) =>
-  (!stream.startsWith("Connected to") && stream.includes("{")) ||
-  stream.includes("}");
+  stream.startsWith(`{"from":"Server","to":`);
 
 /**
  * launch Client Warning
@@ -32,20 +32,6 @@ function ClientError(message: string, err?: unknown) {
     cause: err,
   }).message;
 }
-
-/**
- * excludes events and collections
- */
-const excludes = {
-  collection: "[/collections/*]",
-};
-
-/**
- * normalize response from database
- */
-const fromArray = (data: any[]) => {
-  return data.length === 1 ? data[0] : data;
-};
 
 class ReactiveDB {
   #__queqe__: Array<{ event: string; callback: (data: any) => void }>;
@@ -89,9 +75,12 @@ class ReactiveDB {
 
   #__token__: Token;
 
+  #__client_uuid__: string;
+
   constructor(connection: string, token: Token) {
     const url = parseURL(connection);
 
+    this.#__client_uuid__ = generate();
     this.#__token__ = token;
     this.#__uuid__ = token.uuid;
     this.#__parse__url = url;
@@ -131,6 +120,7 @@ class ReactiveDB {
     // send token and uuid for auth
     url.searchParams.set("x-authorization-token", this.#__token__?.token!);
     url.searchParams.set("x-authorization-uuid", this.#__token__?.uuid! ?? "");
+    url.searchParams.set("x-client-uuid", this.#__client_uuid__! ?? "");
 
     return new WebSocket(url.toString());
   }
@@ -179,7 +169,7 @@ class ReactiveDB {
       this.#Connected(async (event) => {
         this.#__ws__.send(
           JSON.stringify({
-            connect_to: [this.#__to__, excludes.collection],
+            connect_to: [this.#__to__],
           })
         );
 
@@ -232,7 +222,7 @@ class ReactiveDB {
   ) {
     if (!this.#__invalidate__) {
       this.#Connected(() => {
-        const uuid = this.#__uuid__;
+        const uuid = `${this.#__uuid__}@${this.#__client_uuid__}`;
 
         this.#Send({
           to: this.#__to__!,
@@ -245,40 +235,33 @@ class ReactiveDB {
       });
 
       this.#__ws__.addEventListener("message", (stream) => {
-        // ignore non-json data websocket
+        // TODO handle non data events
         if (validStream(stream.data)) {
           const { message } = JSON.parse(stream.data);
-          const { data, uuid = "", event } = JSON.parse(message);
+          const { data, event, uuid } = JSON.parse(message);
 
+          // execute load event only for me
           const isLoadEvent =
-            uuid === this.#__uuid__ && event === this.#__events__.load;
-
-          if (event === excludes.collection) {
-            if (!data[0].includes(this.#__to__)) {
-              throw ClientError(
-                `"${this.#__to__}" collection not exists in the database.`
-              );
-            }
-          }
+            event === this.#__events__.load &&
+            uuid === `${this.#__uuid__}@${this.#__client_uuid__}`;
 
           // initial load event
           if (isLoadEvent) {
-            callback(fromArray(data), event);
+            callback(data, event);
           }
 
           if (
             event !== this.#__events__.load &&
             event !== this.#__events__.get &&
-            event !== excludes.collection &&
             evt === this.#__events__.value
           ) {
-            callback(fromArray(data), event);
+            callback(data, event);
           }
 
           // execute listeners queqe
           this.#__queqe__.forEach(({ event: itemEvent, callback }) => {
             if (itemEvent === event) {
-              callback(fromArray(data));
+              callback(data);
             }
           });
         }

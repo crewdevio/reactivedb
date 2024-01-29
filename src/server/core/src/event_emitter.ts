@@ -58,7 +58,7 @@ export class EventEmitter {
    */
   public createClient(
     clientId: string,
-    clientSocket: globalThis.WebSocket,
+    clientSocket: globalThis.WebSocket
   ): Client {
     const client = new Client(clientId, clientSocket);
     this.clients[clientId] = client;
@@ -80,7 +80,7 @@ export class EventEmitter {
     if (!this.channels[channelName].listeners.has(clientId)) {
       this.channels[channelName].listeners.set(
         clientId,
-        this.clients[clientId].socket,
+        this.clients[clientId].socket
       );
       this.clients[clientId].listening_to.push(channelName);
       return;
@@ -107,8 +107,9 @@ export class EventEmitter {
    */
   public closeChannel(channelName: string): void {
     for (const client of Object.values(this.clients)) {
-      client.socket.send(`${channelName} closed.`);
+      client.socket.send(`{"event": "closed": "from": "${channelName}"}`);
     }
+
     delete this.channels[channelName];
   }
 
@@ -215,7 +216,7 @@ export class EventEmitter {
   public to(
     channelName: string,
     message: unknown,
-    clientToSendTo?: string,
+    clientToSendTo?: string
   ): void {
     this.queuePacket(new Packet(this, channelName, message), clientToSendTo);
   }
