@@ -2,12 +2,39 @@
 // deno-lint-ignore-file
 // This code was bundled using `deno bundle` and it's not recommended to edit it manually
 
-const { Deno: Deno1 } = globalThis;
-typeof Deno1?.noColor === "boolean" ? Deno1.noColor : true;
+function bytesToUuid(bytes) {
+  const bits = [...bytes].map((bit) => {
+    const s = bit.toString(16);
+    return bit < 0x10 ? "0" + s : s;
+  });
+  return [
+    ...bits.slice(0, 4),
+    "-",
+    ...bits.slice(4, 6),
+    "-",
+    ...bits.slice(6, 8),
+    "-",
+    ...bits.slice(8, 10),
+    "-",
+    ...bits.slice(10, 16),
+  ].join("");
+}
+new RegExp(
+  "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+  "i"
+);
+function generate() {
+  const rnds = crypto.getRandomValues(new Uint8Array(16));
+  rnds[6] = (rnds[6] & 0x0f) | 0x40;
+  rnds[8] = (rnds[8] & 0x3f) | 0x80;
+  return bytesToUuid(rnds);
+}
+const { Deno } = globalThis;
+typeof Deno?.noColor === "boolean" ? Deno.noColor : false;
 new RegExp(
   [
     "[\\u001B\\u009B][[\\]()#;?]*(?:(?:(?:(?:;[-a-zA-Z\\d\\/#&.:=?%@~_]+)*|[a-zA-Z\\d]+(?:;[-a-zA-Z\\d\\/#&.:=?%@~_]*)*)?\\u0007)",
-    "(?:(?:\\d{1,4}(?:;\\d{0,4})*)?[\\dA-PR-TZcf-nq-uy=><~]))",
+    "(?:(?:\\d{1,4}(?:;\\d{0,4})*)?[\\dA-PR-TXZcf-nq-uy=><~]))",
   ].join("|"),
   "g"
 );
@@ -22,7 +49,7 @@ var MutableEvents;
 const Routes = {
   id: "/v1/:collection/:id",
   collection: "/v1/:collection",
-  schema: "/v1/api_schema",
+  schema: "/v1/functions_schema",
   auth: {
     register: "/auth/registeUserWithEmailAndPassword",
     login: "/auth/loginWithEmailAndPassword",
@@ -30,10 +57,65 @@ const Routes = {
     disable: "/auth/disableEmailAccount",
   },
 };
-
+class HTTPClient {
+  #fetch_config;
+  #fetch = globalThis.fetch;
+  #url;
+  constructor(url, token) {
+    this.#url = url;
+    this.#fetch_config = {
+      headers: {
+        token,
+      },
+    };
+  }
+  async getDoc(collection, id) {
+    const respose = await this.#fetch(
+      `${this.#url}${Routes.id
+        .replace(":collection", collection)
+        .replace(":id", id)}`,
+      {
+        ...this.#fetch_config,
+      }
+    );
+    return await respose.json();
+  }
+  async updatetDoc(collection, id, data) {
+    const respose = await this.#fetch(
+      `${this.#url}${Routes.id
+        .replace(":collection", collection)
+        .replace("id", id)}`,
+      {
+        ...this.#fetch_config,
+        method: "PATCH",
+        headers: {
+          ...this.#fetch_config.headers,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      }
+    );
+    return await respose.json();
+  }
+  async deleteDoc(id) {}
+  async getCollection(collection) {
+    const respose = await this.#fetch(
+      `${this.#url}${Routes.collection.replace(":collection", collection)}`,
+      {
+        ...this.#fetch_config,
+      }
+    );
+    return await respose.json();
+  }
+}
 class Auth {
   #url;
-  token = null;
+  #store = globalThis.localStorage;
+  #store_key = "__reactivedb__token__";
+  #listeners = [];
+  token = this.#store.getItem(this.#store_key)
+    ? JSON.parse(this.#store.getItem(this.#store_key))
+    : null;
   constructor(connection) {
     this.#url = connection;
   }
@@ -76,7 +158,20 @@ class Auth {
       throw new Error(`[ReactiveDB Auth]: ${data?.message}`).message;
     }
     this.token = data;
+    this.#store.setItem(this.#store_key, JSON.stringify(this.token));
+    this.#listeners.forEach((cb) => cb(this.token));
     return this.token;
+  }
+  onAuthStateChange(callback) {
+    this.#listeners.push(callback);
+    return () => {
+      this.#listeners = [];
+    };
+  }
+  logout() {
+    this.token = null;
+    this.#store.removeItem(this.#store_key);
+    this.#listeners.forEach((cb) => cb(this.token));
   }
 }
 function parseURL(url) {
@@ -98,9 +193,7 @@ function parseURL(url) {
     },
   };
 }
-const validStream = (stream) =>
-  (!stream.startsWith("Connected to") && stream.includes("{")) ||
-  stream.includes("}");
+const validStream = (stream) => stream.startsWith(`{"from":"Server","to":`);
 function ClientWarning(message) {
   console.warn(`[ReactiveDB Client]: ${message}`);
 }
@@ -109,12 +202,6 @@ function ClientError(message, err) {
     cause: err,
   }).message;
 }
-const excludes = {
-  collection: "[/collections/*]",
-};
-const fromArray = (data) => {
-  return data.length === 1 ? data[0] : data;
-};
 class ReactiveDB {
   #__queqe__;
   #__actions__;
@@ -128,8 +215,12 @@ class ReactiveDB {
   #__filter__ = null;
   #__parse__url;
   #__token__;
+  #__client_uuid__;
+  api;
   constructor(connection, token) {
     const url = parseURL(connection);
+    this.api = new HTTPClient(url.toHttp(), token.token);
+    this.#__client_uuid__ = generate();
     this.#__token__ = token;
     this.#__uuid__ = token.uuid;
     this.#__parse__url = url;
@@ -162,6 +253,7 @@ class ReactiveDB {
     const url = new URL(this.#__url__);
     url.searchParams.set("x-authorization-token", this.#__token__?.token);
     url.searchParams.set("x-authorization-uuid", this.#__token__?.uuid ?? "");
+    url.searchParams.set("x-client-uuid", this.#__client_uuid__ ?? "");
     return new WebSocket(url.toString());
   }
   #Send({ to, data }) {
@@ -183,7 +275,7 @@ class ReactiveDB {
       this.#Connected(async (event) => {
         this.#__ws__.send(
           JSON.stringify({
-            connect_to: [this.#__to__, excludes.collection],
+            connect_to: [this.#__to__],
           })
         );
         callback(event);
@@ -199,7 +291,7 @@ class ReactiveDB {
   on(evt, callback = (_data, _event) => {}) {
     if (!this.#__invalidate__) {
       this.#Connected(() => {
-        const uuid = this.#__uuid__;
+        const uuid = `${this.#__uuid__}@${this.#__client_uuid__}`;
         this.#Send({
           to: this.#__to__,
           data: {
@@ -212,30 +304,23 @@ class ReactiveDB {
       this.#__ws__.addEventListener("message", (stream) => {
         if (validStream(stream.data)) {
           const { message } = JSON.parse(stream.data);
-          const { data, uuid = "", event } = JSON.parse(message);
+          const { data, event, uuid } = JSON.parse(message);
           const isLoadEvent =
-            uuid === this.#__uuid__ && event === this.#__events__.load;
-          if (event === excludes.collection) {
-            if (!data[0].includes(this.#__to__)) {
-              throw ClientError(
-                `"${this.#__to__}" collection not exists in the database.`
-              );
-            }
-          }
+            event === this.#__events__.load &&
+            uuid === `${this.#__uuid__}@${this.#__client_uuid__}`;
           if (isLoadEvent) {
-            callback(fromArray(data), event);
+            callback(data, event);
           }
           if (
             event !== this.#__events__.load &&
             event !== this.#__events__.get &&
-            event !== excludes.collection &&
             evt === this.#__events__.value
           ) {
-            callback(fromArray(data), event);
+            callback(data, event);
           }
           this.#__queqe__.forEach(({ event: itemEvent, callback }) => {
             if (itemEvent === event) {
-              callback(fromArray(data));
+              callback(data);
             }
           });
         }
@@ -293,23 +378,6 @@ class ReactiveDB {
       });
     }
     return this;
-  }
-  async get(id) {
-    try {
-      const url = new URL(this.#__parse__url.toHttp());
-      if (id) {
-        url.pathname = Routes.id
-          .replace(":collection", this.#__to__)
-          .replace(":id", id);
-      } else {
-        url.pathname = Routes.collection.replace(":collection", this.#__to__);
-      }
-      const request = await fetch(url.toString());
-      const data = await request.json();
-      return data;
-    } catch (error) {
-      throw ClientError(error.message);
-    }
   }
   onClose(callback = (_event) => {}) {
     this.#__ws__.addEventListener("close", callback);

@@ -13,12 +13,24 @@ export interface Token {
   token: string;
 }
 
+type Listener = (user: Token | null) => void | Promise<void>;
+
 /**
  * authentication module
  */
 export class Auth {
   #url: string;
-  public token: Token | null = null;
+
+  #store = globalThis.localStorage;
+
+  #store_key = "__reactivedb__token__";
+
+  #listeners: Listener[] = [];
+
+  public token: Token | null = this.#store.getItem(this.#store_key)
+    ? (JSON.parse(this.#store.getItem(this.#store_key)!) as Token)
+    : null;
+
   constructor(connection: string) {
     this.#url = connection;
   }
@@ -88,6 +100,25 @@ export class Auth {
 
     this.token = data;
 
+    this.#store.setItem(this.#store_key, JSON.stringify(this.token));
+
+    this.#listeners.forEach((cb) => cb(this.token));
+
     return this.token;
+  }
+
+  onAuthStateChange(callback: Listener) {
+    this.#listeners.push(callback);
+
+    return () => {
+      this.#listeners = [];
+    };
+  }
+
+  logout() {
+    this.token = null;
+
+    this.#store.removeItem(this.#store_key);
+    this.#listeners.forEach((cb) => cb(this.token));
   }
 }

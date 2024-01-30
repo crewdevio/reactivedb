@@ -120,7 +120,8 @@ export const Routes = {
   },
 };
 
-export const IS_DENO_DEPLOY = Deno.env.get("DENO_DEPLOYMENT_ID") !== undefined;
+export const IS_DENO_DEPLOY = () =>
+  Deno.env.get("DENO_DEPLOYMENT_ID") !== undefined;
 
 /**
  * Test whether or not the given path exists by checking with the file system

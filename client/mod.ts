@@ -9,6 +9,7 @@ import type { ReactiveEvents } from "../src/types.ts";
 import { generate } from "../src/libs/uuid/v4.js";
 import { Routes } from "../src/shared/utils.ts";
 import type { Token } from "./auth/mod.ts";
+import { HTTPClient } from "./http.ts";
 import { Auth } from "./auth/mod.ts";
 import { parseURL } from "./util.ts";
 
@@ -77,8 +78,12 @@ class ReactiveDB {
 
   #__client_uuid__: string;
 
+  public api: HTTPClient;
+
   constructor(connection: string, token: Token) {
     const url = parseURL(connection);
+
+    this.api = new HTTPClient(url.toHttp(), token.token);
 
     this.#__client_uuid__ = generate();
     this.#__token__ = token;
@@ -296,7 +301,7 @@ class ReactiveDB {
 
   /**
    * remove data on database
-   * @param {any} data
+   * @param {string} data
    */
   public remove(id = "") {
     if (this.#__ws__.readyState === 1 && id !== "") {
@@ -314,7 +319,7 @@ class ReactiveDB {
 
   /**
    * update data on database
-   * @param {any} old
+   * @param {string} old
    * @param {any} data
    */
   public set(id = "", data = {}) {
@@ -336,31 +341,6 @@ class ReactiveDB {
     }
 
     return this;
-  }
-
-  /**
-   * get data from database
-   * @returns {Promise<any>} data
-   */
-  public async get<T extends any = any>(id?: string): Promise<T | T[]> {
-    try {
-      const url = new URL(this.#__parse__url.toHttp());
-
-      if (id) {
-        url.pathname = Routes.id
-          .replace(":collection", this.#__to__!)
-          .replace(":id", id);
-      } else {
-        url.pathname = Routes.collection.replace(":collection", this.#__to__!);
-      }
-
-      const request = await fetch(url.toString());
-      const data = await request.json();
-
-      return data as T;
-    } catch (error) {
-      throw ClientError(error.message);
-    }
   }
 
   /**

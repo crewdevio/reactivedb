@@ -1,15 +1,27 @@
-import { createClient } from "./client/mod.ts";
+import { createClient, Auth } from "./client/mod.ts";
 
-const client = createClient("http://localhost:4000");
+const url = "http://localhost:4000";
 
-const ws = client();
+const auth = new Auth(url);
 
-ws.connectTo("users", () => {
-  console.log("connected");
+auth.onAuthStateChange((user) => {
+  console.log({ user });
 });
 
-ws.on("value", (data, event) => {
-  console.log({ data, event });
+const token = await auth.token;
+
+const ReactiveDB = createClient(url, token!);
+
+const client = ReactiveDB();
+
+client.connectTo("Auth_users", () => console.log("connected to Auth_users"));
+
+client.on("value", async (data, event) => {
+  const d = await client.api.getDoc("Auth_users", "64bde69a2877108555d56b05");
+
+  console.log({ d });
 });
 
-ws.onClose().add({ from: "disconned", ok: true });
+client.onClose(() => {
+  console.log("disconnected to Auth_users");
+});
