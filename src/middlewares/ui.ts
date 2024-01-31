@@ -6,7 +6,7 @@ export const UI = async (ctx: Context, next: () => Promise<unknown>) => {
   const prefix = "/UI"; // Sub-path to react on
   if (ctx.request.url.pathname.startsWith(prefix)) {
     await ctx.send({
-      root: `${Deno.cwd()}/UI`, // Local directory to serve from
+      root: `${Deno.cwd()}/dashboard/dist`, // Local directory to serve from
       index: "index.html",
       path: ctx.request.url.pathname.replace(prefix, ""), // Map to target path
     });

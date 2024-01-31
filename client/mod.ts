@@ -7,7 +7,6 @@
 
 import type { ReactiveEvents } from "../src/types.ts";
 import { generate } from "../src/libs/uuid/v4.js";
-import { Routes } from "../src/shared/utils.ts";
 import type { Token } from "./auth/mod.ts";
 import { HTTPClient } from "./http.ts";
 import { Auth } from "./auth/mod.ts";
@@ -67,13 +66,6 @@ class ReactiveDB {
    */
   #__instance__: boolean = true;
 
-  /**
-   * filter for events data
-   */
-  #__filter__: any = null;
-
-  #__parse__url: ReturnType<typeof parseURL>;
-
   #__token__: Token;
 
   #__client_uuid__: string;
@@ -88,7 +80,6 @@ class ReactiveDB {
     this.#__client_uuid__ = generate();
     this.#__token__ = token;
     this.#__uuid__ = token.uuid;
-    this.#__parse__url = url;
     this.#__url__ = url.toWs();
     this.#__ws__ = this.#Websocket();
     this.#__invalidate__ = false;
@@ -278,7 +269,8 @@ class ReactiveDB {
       this.#__queqe__.push({ event: evt, callback });
     }
 
-    return this;
+    // close callback
+    return () => this.#__ws__.close();
   }
 
   /**

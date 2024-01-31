@@ -4,5 +4,5 @@
 ./test.ts
 ./index.html
 .env
-./ui/node_modules
+./dashboard/node_modules
 ./examples/functions/UI

@@ -6,6 +6,9 @@
  */
 
 import { Routes } from "../../src/shared/utils.ts";
+import { Evt } from "../../imports/evt.ts";
+
+const events = new Evt<AuthEvent>();
 
 export interface Token {
   email: string;
@@ -13,7 +16,8 @@ export interface Token {
   token: string;
 }
 
-type Listener = (user: Token | null) => void | Promise<void>;
+type Listener = (user: Token | null, session: boolean) => void | Promise<void>;
+type AuthEvent = { token: Token | null; session: boolean };
 
 /**
  * authentication module
@@ -21,15 +25,19 @@ type Listener = (user: Token | null) => void | Promise<void>;
 export class Auth {
   #url: string;
 
-  #store = globalThis.localStorage;
-
-  #store_key = "__reactivedb__token__";
-
-  #listeners: Listener[] = [];
-
-  public token: Token | null = this.#store.getItem(this.#store_key)
-    ? (JSON.parse(this.#store.getItem(this.#store_key)!) as Token)
+  public token: Token | null = Auth.store.getItem(Auth.store_key)
+    ? (JSON.parse(Auth.store.getItem(Auth.store_key)!) as Token)
     : null;
+
+  private static get store_key() {
+    return globalThis?.Deno
+      ? "__reactivedb__token__"
+      : "__reactivedb__token__web__";
+  }
+
+  private static get store() {
+    return globalThis.localStorage;
+  }
 
   constructor(connection: string) {
     this.#url = connection;
@@ -100,25 +108,45 @@ export class Auth {
 
     this.token = data;
 
-    this.#store.setItem(this.#store_key, JSON.stringify(this.token));
+    Auth.store.setItem(Auth.store_key, JSON.stringify(this.token));
 
-    this.#listeners.forEach((cb) => cb(this.token));
+    events.post({
+      token: this.token,
+      session: !!this.token,
+    });
 
     return this.token;
   }
 
-  onAuthStateChange(callback: Listener) {
-    this.#listeners.push(callback);
+  /**
+   * change password for current user
+   */
+  async changePassword(current: string, update: string) {}
 
-    return () => {
-      this.#listeners = [];
-    };
+  /**
+   * listen auth state changes
+   */
+  onAuthStateChange(callback: Listener) {
+    events.attach(({ session, token }) => {
+      callback(token, session);
+    });
+
+    events.post({
+      token: this.token,
+      session: !!this.token,
+    });
+
+    return () => events.detach();
   }
 
   logout() {
     this.token = null;
 
-    this.#store.removeItem(this.#store_key);
-    this.#listeners.forEach((cb) => cb(this.token));
+    Auth.store.removeItem(Auth.store_key);
+
+    events.post({
+      token: this.token,
+      session: !!this.token,
+    });
   }
 }

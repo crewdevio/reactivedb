@@ -3,8 +3,6 @@ import { Routes } from "../src/shared/utils.ts";
 export class HTTPClient {
   #fetch_config: RequestInit;
 
-  #fetch = globalThis.fetch;
-
   #url: string;
 
   constructor(url: string, token: string) {
@@ -20,7 +18,7 @@ export class HTTPClient {
     collection: string,
     id: string
   ): Promise<T> {
-    const respose = await this.#fetch(
+    const respose = await globalThis.fetch(
       `${this.#url}${Routes.id
         .replace(":collection", collection)
         .replace(":id", id)}`,
@@ -37,7 +35,7 @@ export class HTTPClient {
     id: string,
     data: T
   ): Promise<T> {
-    const respose = await this.#fetch(
+    const respose = await globalThis.fetch(
       `${this.#url}${Routes.id
         .replace(":collection", collection)
         .replace("id", id)}`,
@@ -60,7 +58,7 @@ export class HTTPClient {
   public async getCollection<T extends unknown = any>(
     collection: string
   ): Promise<T[]> {
-    const respose = await this.#fetch(
+    const respose = await globalThis.fetch(
       `${this.#url}${Routes.collection.replace(":collection", collection)}`,
       {
         ...this.#fetch_config,
