@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+export { mongo } from "./src/database/mod.ts";
 export * from "./src/core/mod.ts";
 export * from "./src/api/mod.ts";
 export * from "./src/cls/mod.ts";

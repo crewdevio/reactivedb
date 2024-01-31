@@ -5,67 +5,26 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { Logs, parseDataBaseUrl } from "../shared/utils.ts";
-import { MongoClient } from "../../imports/mongo.ts";
-import type { DataBaseProps } from "../types.ts";
+import type { MongoClientOptions } from "../../imports/mongodb.ts";
+import { MongoClient } from "../../imports/mongodb.ts";
+import { Logs } from "../shared/utils.ts";
 
 /**
  * create a database connection
- * @param {string | DataBaseProps} connection connection config
+ * @param {string} connection connection config
  */
-export async function StartDataBase(
-  connection: string | DataBaseProps = "mongodb://127.0.0.1:27017/Default"
+export async function StartMongoDataBase(
+  connection: string,
+  options?: MongoClientOptions
 ) {
   try {
-    const client = new MongoClient();
+    const client = new MongoClient(connection, options);
 
-    if (typeof connection === "string") {
-      const { Uri, connectTo } = parseDataBaseUrl(connection);
-      await client.connect(Uri);
-
-      return {
-        Database: client.database(connectTo),
-        client,
-      };
-    } else if (
-      typeof connection === "object" &&
-      Object.keys(connection).length
-    ) {
-      const {
-        db,
-        tls,
-        host,
-        port,
-        credential: { password, username },
-      } = connection;
-
-      await client.connect({
-        db,
-        tls,
-        servers: [
-          {
-            host,
-            port,
-          },
-        ],
-        credential: {
-          mechanism: "SCRAM-SHA-1",
-          username,
-          password,
-          db,
-        },
-      });
-
-      Logs.info("Database started for Realtime and Functions\n");
-
-      return {
-        Database: client.database(db),
-        client,
-      };
-    }
-  } catch (error: any) {
+    Logs.info("Database started for Realtime and Functions\n");
+    return client;
+  } catch (error) {
     console.error(error);
   }
 }
 
-export * from "../../imports/mongo.ts";
+export * as mongo from "../../imports/mongodb.ts";

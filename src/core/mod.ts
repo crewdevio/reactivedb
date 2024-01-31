@@ -12,9 +12,9 @@ import type {
   ReactiveCoreProps,
   SFunction,
 } from "../types.ts";
-import { MutableEvents, transform } from "../shared/utils.ts";
 import { cyan, yellow } from "../../imports/fmt.ts";
-import { Bson } from "../../imports/mongo.ts";
+import { ObjectId } from "../../imports/mongodb.ts";
+import { MutableEvents } from "../shared/utils.ts";
 import { reactiveEvents } from "./events.ts";
 import { server } from "../server/mod.ts";
 
@@ -40,16 +40,20 @@ export async function ReactiveCore({
   middlewares,
   CLSDefinition,
   mapper,
+  database,
+  mongodbOptions,
 }: ReactiveCoreProps) {
   // Run websockets server
   const instance = await server.init({
-    database: connection,
+    database,
     hostname: "0.0.0.0",
     port,
     secretKey,
     middlewares,
     CLSDefinition,
     mapper,
+    connection,
+    mongodbOptions,
   });
 
   port = cyan(port.toString()) as any as number;
@@ -69,7 +73,9 @@ export async function ReactiveCore({
   let actions = new Map<string, Actions>();
   let client: Actions | any = {};
 
-  const collections = await instance.DB.listCollectionNames();
+  const collections = (await instance.DB.listCollections().toArray()).map(
+    ({ name }) => name
+  );
 
   // dispatch custom or internal events
   reactiveEvents.attach(({ to, data, event }) => {
@@ -125,7 +131,7 @@ export async function ReactiveCore({
       if (event === MutableEvents.Remove) {
         const { id } = userData?.data;
 
-        await data.deleteOne({ _id: new Bson.ObjectId(id) });
+        await data.deleteOne({ _id: new ObjectId(id) });
 
         server.to(
           collection,
@@ -142,10 +148,7 @@ export async function ReactiveCore({
       if (event === MutableEvents.Change) {
         const { id, new: New } = userData.data;
 
-        await data.updateOne(
-          { _id: new Bson.ObjectId(id) },
-          { $set: { ...New } }
-        );
+        await data.updateOne({ _id: new ObjectId(id) }, { $set: { ...New } });
 
         server.to(
           collection,
@@ -186,7 +189,7 @@ export async function ReactiveCore({
             if (action === MutableEvents.Remove) {
               const { id } = data;
 
-              await db.deleteOne({ _id: new Bson.ObjectId(id) });
+              await db.deleteOne({ _id: new ObjectId(id) });
 
               server.to(
                 on,
@@ -201,7 +204,7 @@ export async function ReactiveCore({
               const { new: New, id } = data;
 
               await db.updateOne(
-                { _id: new Bson.ObjectId(id) },
+                { _id: new ObjectId(id) },
                 { $set: { ...New } }
               );
 

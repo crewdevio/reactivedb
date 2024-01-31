@@ -1,5 +1,5 @@
 import type { Context } from "../../imports/server_oak.ts";
-import * as mongo from "../../imports/mongo.ts";
+import { Db } from "../../imports/mongodb.ts";
 import { jwt } from "../../imports/jwt.ts";
 import { JWTPayload } from "../types.ts";
 
@@ -7,7 +7,7 @@ export async function AuthToken(
   ctx: Context,
   next: () => Promise<any> | any,
   secretKey: CryptoKey,
-  DB: mongo.Database
+  DB: Db
 ) {
   try {
     const token = ctx.request.headers.get("token")!;

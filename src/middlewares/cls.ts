@@ -2,7 +2,7 @@ import type { Context, Next, HTTPMethods } from "../../imports/server_oak.ts";
 import { matchPath } from "https://esm.sh/react-router@5.3.4";
 import type { WriteMethods } from "./../cls/mod.ts";
 import type { CLSDefinition } from "../cls/mod.ts";
-import * as mongo from "../../imports/mongo.ts";
+import { Db } from "../../imports/mongodb.ts";
 import type { JWTPayload } from "../types.ts";
 import { jwt } from "../../imports/jwt.ts";
 
@@ -79,7 +79,7 @@ export async function CLSValidator(
   next: Next,
   CLSDefinition: CLSDefinition,
   secretKey: CryptoKey,
-  DB: mongo.Database
+  DB: Db
 ) {
   const routes = Object.entries(CLSDefinition!)
     .filter(([path]) => !!match(path, ctx))

@@ -10,11 +10,11 @@ import { Application } from "../../imports/server_oak.ts";
 import { Websockets } from "../middlewares/websockets.ts";
 import { CLSValidator } from "../middlewares/cls.ts";
 import type { CLSDefinition } from "../cls/mod.ts";
-import * as mongo from "../../imports/mongo.ts";
+import { Db } from "../../imports/mongodb.ts";
 import { CreateRouter } from "./router.ts";
 
 export async function Api(
-  DB: mongo.Database,
+  DB: Db,
   secretKey: CryptoKey,
   app: Application,
   CLSDefinition: CLSDefinition | null | undefined,

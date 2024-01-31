@@ -1,5 +1,5 @@
 import type { Context, Next } from "../../imports/server_oak.ts";
-import * as mongo from "../../imports/mongo.ts";
+import { Db } from "../../imports/mongodb.ts";
 import type { JWTPayload } from "../types.ts";
 import { jwt } from "../../imports/jwt.ts";
 
@@ -7,7 +7,7 @@ export async function Websockets(
   ctx: Context,
   next: Next,
   secretKey: CryptoKey,
-  DB: mongo.Database
+  DB: Db
 ) {
   // ws token check
   if (ctx.request.url.pathname === "/[WebSocket]") {

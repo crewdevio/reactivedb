@@ -23,13 +23,10 @@ import { load } from "https://deno.land/std/dotenv/mod.ts";
 
 // load envs
 const {
-  REACTIVE_USERNAME_DB,
-  REACTIVE_PASSWORD_DB,
-  REACTIVEE_HOST_DB,
-  REACTIVE_DB_NAME,
-  REACTIVE_DB_PORT,
   REACTIVE_SERVER_PORT,
   REACTIVE_JWK_BASE_64,
+  REACTIVE_DB_CONNECTION,
+  REACTIVE_DB_NAME,
 } = await load();
 
 const crypt = new Crypto({ name: "HMAC", hash: "SHA-512" }, true, [
@@ -41,17 +38,10 @@ const secretKey = await crypt.importFromJWKBase64(REACTIVE_JWK_BASE_64);
 
 // start reactivedb
 await ReactiveCore({
-  connection: {
-    host: REACTIVEE_HOST_DB,
-    db: REACTIVE_DB_NAME,
-    port: Number(REACTIVE_DB_PORT),
-    tls: true,
-    credential: {
-      username: REACTIVE_USERNAME_DB,
-      password: REACTIVE_PASSWORD_DB,
-    },
-  },
-  port: Number(REACTIVE_SERVER_PORT),
+  connection: REACTIVE_DB_CONNECTION, // mongodb+srv://<username>:<password>@<cluster-address>/?retryWrites=true&w=majority
+  port: Number(REACTIVE_SERVER_PORT), // 4000
+  database: REACTIVE_DB_NAME, // <database-name>
+  CLSDefinition: rules,
   secretKey,
 });
 ```
@@ -139,13 +129,10 @@ import { load } from "https://deno.land/std/dotenv/mod.ts";
 
 // load envs - we strongly recommend using environment variables
 const {
-  REACTIVE_USERNAME_DB,
-  REACTIVE_PASSWORD_DB,
-  REACTIVEE_HOST_DB,
-  REACTIVE_DB_NAME,
-  REACTIVE_DB_PORT,
   REACTIVE_SERVER_PORT,
   REACTIVE_JWK_BASE_64,
+  REACTIVE_DB_CONNECTION,
+  REACTIVE_DB_NAME,
 } = await load();
 ```
 
@@ -184,13 +171,10 @@ import { load } from "https://deno.land/std/dotenv/mod.ts";
 
 // load envs
 const {
-  REACTIVE_USERNAME_DB,
-  REACTIVE_PASSWORD_DB,
-  REACTIVEE_HOST_DB,
-  REACTIVE_DB_NAME,
-  REACTIVE_DB_PORT,
   REACTIVE_SERVER_PORT,
   REACTIVE_JWK_BASE_64,
+  REACTIVE_DB_CONNECTION,
+  REACTIVE_DB_NAME,
 } = await load();
 
 const crypt = new Crypto({ name: "HMAC", hash: "SHA-512" }, true, [
@@ -203,17 +187,10 @@ const secretKey = await crypt.importFromJWKBase64(REACTIVE_JWK_BASE_64);
 
 // start reactivedb
 await ReactiveCore({
-  connection: {
-    host: REACTIVEE_HOST_DB,
-    db: REACTIVE_DB_NAME,
-    port: Number(REACTIVE_DB_PORT),
-    tls: true,
-    credential: {
-      username: REACTIVE_USERNAME_DB,
-      password: REACTIVE_PASSWORD_DB,
-    },
-  }, // or connection: "mongodb://localhost:27017/myDatabase"
-  port: Number(REACTIVE_SERVER_PORT),
+  connection: REACTIVE_DB_CONNECTION, // mongodb+srv://<username>:<password>@<cluster-address>/?retryWrites=true&w=majority
+  port: Number(REACTIVE_SERVER_PORT), // 4000
+  database: REACTIVE_DB_NAME, // <database-name>
+  CLSDefinition: rules,
   secretKey,
 });
 ```
@@ -435,20 +412,11 @@ const rules = CLSBuilder(() => ({
 ....
 
 await ReactiveCore({
-  connection: {
-    host: REACTIVEE_HOST_DB,
-    db: REACTIVE_DB_NAME,
-    port: Number(REACTIVE_DB_PORT),
-    tls: true,
-    credential: {
-      username: REACTIVE_USERNAME_DB,
-      password: REACTIVE_PASSWORD_DB,
-    },
-  },
-  port: Number(REACTIVE_SERVER_PORT),
+  connection: REACTIVE_DB_CONNECTION, // mongodb+srv://<username>:<password>@<cluster-address>/?retryWrites=true&w=majority
+  port: Number(REACTIVE_SERVER_PORT), // 4000
+  database: REACTIVE_DB_NAME, // <database-name>
+  CLSDefinition: rules,
   secretKey,
-  CLSDefinition: rules, // pass rules to ReactiveDB core
-  mapper: true,
 });
 ```
 

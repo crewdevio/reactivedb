@@ -1,17 +1,13 @@
-import { ReactiveCore, Crypto, CLSBuilder } from "../../mod.ts";
-import { Bson } from "../../imports/mongo.ts";
+import { ReactiveCore, Crypto, CLSBuilder, mongo } from "../../mod.ts";
 import { load } from "../../imports/env.ts";
 // import "./rdb_mapper.ts";
 
 // load envs
 const {
-  REACTIVE_USERNAME_DB,
-  REACTIVE_PASSWORD_DB,
-  REACTIVEE_HOST_DB,
-  REACTIVE_DB_NAME,
-  REACTIVE_DB_PORT,
   REACTIVE_SERVER_PORT,
   REACTIVE_JWK_BASE_64,
+  REACTIVE_DB_CONNECTION,
+  REACTIVE_DB_NAME,
 } = await load();
 
 const crypt = new Crypto({ name: "HMAC", hash: "SHA-512" }, true, [
@@ -29,7 +25,7 @@ const rules = CLSBuilder(() => ({
 
         const items = db.collection(collection);
 
-        const doc = await items.findOne({ _id: new Bson.ObjectId(id) })!;
+        const doc = await items.findOne({ _id: new mongo.ObjectId(id) })!;
         const userReq = await items.findOne({ uuid: context.uuid })!;
 
         const { uuid } = context;
@@ -58,18 +54,9 @@ const rules = CLSBuilder(() => ({
 }));
 
 await ReactiveCore({
-  connection: {
-    host: REACTIVEE_HOST_DB,
-    db: REACTIVE_DB_NAME,
-    port: Number(REACTIVE_DB_PORT),
-    tls: true,
-    credential: {
-      username: REACTIVE_USERNAME_DB,
-      password: REACTIVE_PASSWORD_DB,
-    },
-  },
+  connection: REACTIVE_DB_CONNECTION,
   port: Number(REACTIVE_SERVER_PORT),
-  secretKey,
+  database: REACTIVE_DB_NAME,
   CLSDefinition: rules,
-  mapper: true,
+  secretKey,
 });

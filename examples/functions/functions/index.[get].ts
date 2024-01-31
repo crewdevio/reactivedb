@@ -1,5 +1,5 @@
-import type { Context, Utilities, Middleware } from "../../../mod.ts";
 import { Handler, HandlerMiddlewares } from "../../../mod.ts";
+import type { Context, Utilities } from "../../../mod.ts";
 
 export const middlewares = HandlerMiddlewares([
   async (ctx, next) => {
@@ -12,9 +12,7 @@ export const middlewares = HandlerMiddlewares([
 export default async function ElpEpE(context: Context, utils: Utilities) {
   try {
     const x = await utils.Database.collection("Auth_users");
-    const results = await x
-      .find(undefined, { noCursorTimeout: false })
-      .toArray();
+    const results = await x.find().toArray();
 
     utils.Events.post({
       to: "Auth_users",

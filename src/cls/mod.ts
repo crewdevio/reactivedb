@@ -1,6 +1,6 @@
-import { Database } from "../../imports/mongo.ts";
 import { ExctractParams } from "../types.ts";
 import { join } from "../../imports/path.ts";
+import { Db } from "../../imports/mongodb.ts";
 
 type RuleResponse<T extends boolean = boolean> = Promise<T> | T;
 
@@ -15,7 +15,7 @@ export type WriteResponse = WriteMethods | boolean;
 export interface CLSDefinition {
   [key: string]: (
     params: <T>() => ExctractParams<T>,
-    db: Database,
+    db: Db,
     context: {
       uuid: string;
       email: string;
@@ -29,6 +29,11 @@ export interface CLSDefinition {
 
 type Builder = () => CLSDefinition;
 
+/**
+ * Collection level security builder
+ * @param callback
+ * @returns
+ */
 export function CLSBuilder(callback: Builder) {
   const definitions = callback();
 

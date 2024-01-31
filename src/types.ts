@@ -11,9 +11,10 @@ import type {
   State,
   Context as OakContext,
 } from "../imports/server_oak.ts";
-import type { Database as DB } from "../imports/mongo.ts";
+
+import type { MongoClientOptions } from "../imports/mongodb.ts";
+import { MongoClient, Db } from "../imports/mongodb.ts";
 import type { CLSDefinition } from "./cls/mod.ts";
-import { MongoClient } from "../imports/mongo.ts";
 import { Packet } from "./server/mod.ts";
 
 export type ReactiveEvents =
@@ -31,12 +32,14 @@ export interface ReactiveDBProps {
 }
 
 export interface ReactiveCoreProps {
-  connection: string | DataBaseProps;
+  connection: string;
   port?: number;
   secretKey: CryptoKey;
   middlewares?: Middleware[];
   CLSDefinition?: CLSDefinition;
   mapper?: boolean;
+  database: string;
+  mongodbOptions?: MongoClientOptions;
 }
 
 export interface IPacket extends Packet {
@@ -57,26 +60,10 @@ export interface Actions {
   }>;
 }
 
-export interface DataBaseProps {
-  db: string;
-  tls?: boolean;
-  host: string;
-  port: number;
-  certFile?: string;
-  compression?: string[];
-  safe?: string;
-  keyFile?: string;
-  keyFilePassword?: string;
-  credential: {
-    username?: string;
-    password?: string;
-  };
-}
-
 export interface ApiCoreProps {
   port: number;
   database: MongoClient;
-  connection: string | DataBaseProps;
+  connection: string;
 }
 
 export type Context = RouterContext<string>;
@@ -105,7 +92,7 @@ export interface Utilities {
   /**
    * database instance Object
    */
-  Database: DB;
+  Database: Db;
   /**
    * Event handler
    */

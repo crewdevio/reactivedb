@@ -8,19 +8,18 @@
 import { Routes, transform, IS_DENO_DEPLOY, exists } from "../shared/utils.ts";
 import { encodeHex, encode } from "../../imports/encoding.ts";
 import { handleFiles } from "../core/funtions_runtime.ts";
+import { Db, ObjectId } from "../../imports/mongodb.ts";
 import { Router } from "../../imports/server_oak.ts";
 import { AuthToken } from "../middlewares/auth.ts";
 import { reactiveEvents } from "../core/events.ts";
 import { crypto } from "../../imports/cripto.ts";
-import * as mongo from "../../imports/mongo.ts";
 import { generate } from "../libs/uuid/v4.js";
 import { join } from "../../imports/path.ts";
 import { walk } from "../../imports/fs.ts";
 import { jwt } from "../../imports/jwt.ts";
-import { Bson } from "../database/mod.ts";
 
 export async function CreateRouter(
-  DB: mongo.Database,
+  DB: Db,
   secretKey: CryptoKey,
   mapper?: boolean
 ) {
@@ -117,7 +116,7 @@ export async function CreateRouter(
 
         const data = DB.collection(collection);
         const find = await data
-          .find({ _id: new Bson.ObjectId(id) }, { noCursorTimeout: false })
+          .find({ _id: new ObjectId(id) }, { noCursorTimeout: false })
           .toArray();
 
         response.status = 200;
@@ -140,7 +139,9 @@ export async function CreateRouter(
     async ({ request, response, params }) => {
       try {
         if (decodeURIComponent(request.url.pathname) === "/v1/*") {
-          const collections = await DB.listCollectionNames();
+          const collections = (await DB.listCollections().toArray()).map(
+            ({ name }) => name
+          );
 
           response.status = 200;
           response.body = { collections };
@@ -148,9 +149,7 @@ export async function CreateRouter(
           const collection = params?.collection!;
           const data = DB.collection(collection);
 
-          const find = await data
-            .find(undefined, { noCursorTimeout: false })
-            .toArray();
+          const find = await data.find().toArray();
 
           response.status = 200;
           response.body = find;
@@ -180,9 +179,7 @@ export async function CreateRouter(
 
         const added = await query.insertOne(requestData);
 
-        const finds = await query
-          .find(undefined, { noCursorTimeout: false })
-          .toArray();
+        const finds = await query.find().toArray();
 
         reactiveEvents.post({
           to: collection,
@@ -214,15 +211,13 @@ export async function CreateRouter(
 
         const query = DB.collection(collection);
         const finded = await query.findOne(
-          { _id: new Bson.ObjectId(id) },
+          { _id: new ObjectId(id) },
           { noCursorTimeout: false }
         );
 
         if (finded) {
           await query.deleteOne(finded as any);
-          const finds = await query
-            .find(undefined, { noCursorTimeout: false })
-            .toArray();
+          const finds = await query.find().toArray();
 
           reactiveEvents.post({
             to: collection,
@@ -263,7 +258,7 @@ export async function CreateRouter(
 
       const query = DB.collection(collection);
       const finded = await query.findOne(
-        { _id: new Bson.ObjectId(id) },
+        { _id: new ObjectId(id) },
         { noCursorTimeout: false }
       );
 
@@ -272,9 +267,7 @@ export async function CreateRouter(
 
         await query.updateOne(oldData, { $set: { ...newData } });
 
-        const finds = await query
-          .find(undefined, { noCursorTimeout: false })
-          .toArray();
+        const finds = await query.find().toArray();
 
         reactiveEvents.post({
           to: collection,
@@ -308,7 +301,7 @@ export async function CreateRouter(
 
       const query = DB.collection(collection);
       const finded = await query.findOne(
-        { _id: new Bson.ObjectId(id) },
+        { _id: new ObjectId(id) },
         { noCursorTimeout: false }
       );
 
@@ -317,9 +310,7 @@ export async function CreateRouter(
 
         await query.updateOne(oldData, { $set: { ...newData } });
 
-        const finds = await query
-          .find(undefined, { noCursorTimeout: false })
-          .toArray();
+        const finds = await query.find().toArray();
 
         reactiveEvents.post({
           to: collection,
@@ -380,9 +371,7 @@ export async function CreateRouter(
         provider: "email",
       });
 
-      const finds = await users
-        .find(undefined, { noCursorTimeout: false })
-        .toArray();
+      const finds = await users.find().toArray();
 
       reactiveEvents.post({
         to: "Auth_users",

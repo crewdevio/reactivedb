@@ -5,7 +5,7 @@ export default async function Index(context: Context, utils: Utilities) {
 
   console.log("remove", context.params);
 
-  const results = await x.find(undefined, { noCursorTimeout: false }).toArray();
+  const results = await x.find().toArray();
 
   utils.Events.post({
     to: "users",

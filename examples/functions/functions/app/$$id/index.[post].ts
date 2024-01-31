@@ -3,7 +3,7 @@ import type { Context, Utilities } from "../../../../../mod.ts";
 export default async function Index(context: Context, utils: Utilities) {
   const x = await utils.Database.collection("users");
 
-  const results = await x.find(undefined, { noCursorTimeout: false }).toArray();
+  const results = await x.find().toArray();
 
   console.log("index/:id", context.params);
 

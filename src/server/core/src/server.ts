@@ -2,12 +2,13 @@ import type {
   ListenOptionsBase,
   ListenOptionsTls,
 } from "../../../../imports/server_oak.ts";
-import type { DataBaseProps, Middleware } from "../../../types.ts";
+import { MongoClientOptions } from "../../../../imports/mongodb.ts";
 import { Application } from "../../../../imports/server_oak.ts";
-import { StartDataBase } from "../../../database/mod.ts";
+import { StartMongoDataBase } from "../../../database/mod.ts";
 import type { CLSDefinition } from "../../../cls/mod.ts";
 import { ITransmitterOptions } from "./interfaces.ts";
-import * as mongo from "../../../../imports/mongo.ts";
+import { Db } from "../../../../imports/mongodb.ts";
+import type { Middleware } from "../../../types.ts";
 import { EventEmitter } from "./event_emitter.ts";
 import { Transmitter } from "./transmitter.ts";
 import { Api } from "../../../api/mod.ts";
@@ -15,19 +16,23 @@ import { Client } from "./client.ts";
 import { Packet } from "./packet.ts";
 
 interface RunOptionsTLS extends ListenOptionsTls {
-  database: string | DataBaseProps;
+  connection: string;
+  database: string;
   secretKey: CryptoKey;
   middlewares?: Middleware[];
   CLSDefinition?: CLSDefinition;
   mapper?: boolean;
+  mongodbOptions?: MongoClientOptions;
 }
 
 interface RunOptions extends ListenOptionsBase {
-  database: string | DataBaseProps;
+  connection: string;
+  database: string;
   secretKey: CryptoKey;
   middlewares?: Middleware[];
   CLSDefinition?: CLSDefinition;
   mapper?: boolean;
+  mongodbOptions?: MongoClientOptions;
 }
 
 /**
@@ -38,7 +43,7 @@ export class Server extends EventEmitter {
   /**
    * database connection
    */
-  private database_connection: string | DataBaseProps;
+  private database_connection: string;
   /**
    * A property to hold the Deno server. This property is set in this.run()
    * like so:
@@ -61,7 +66,7 @@ export class Server extends EventEmitter {
   private options: RunOptions | RunOptionsTLS | null = null;
   private AbortController: AbortController;
 
-  public Database: mongo.Database | null = null;
+  public Database: Db | null = null;
 
   private CLSDefinitions: CLSDefinition | null | undefined = null;
 
@@ -105,12 +110,17 @@ export class Server extends EventEmitter {
    */
   public async init(options: RunOptions | RunOptionsTLS): Promise<{
     server: Application;
-    DB: mongo.Database;
+    DB: Db;
   }> {
-    this.database_connection = options.database;
+    this.database_connection = options.connection;
     this.CLSDefinitions = options.CLSDefinition;
 
-    const { Database } = (await StartDataBase(this.database_connection))!;
+    const raw = (await StartMongoDataBase(
+      this.database_connection,
+      options.mongodbOptions
+    ))!;
+
+    const Database = raw.db(options.database);
 
     this.secretKey = options.secretKey;
     this.Database = Database;
